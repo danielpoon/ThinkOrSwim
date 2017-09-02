@@ -23,7 +23,7 @@ def stoch = StochasticFull("k period" = 5);
 def mf = MoneyFlowIndex();
 
 # Indicator Scoring
-def bb = if bbCalc > 95 then 5 else if bbCalc < 5 then -5 else 0;
+def bb = if (bbCalc > 100 and bbCalc < bbCalc[1]) or (bbCalc between 95 and 100) then 5 else if  (bbCalc < 0 and bbCalc > bbCalc[1]) or (bbCalc between 0 and 5) then -5 else 0;
 def sto = if stoch > 80 then 5 else if stoch < 20 then -5 else 0;
 def rsiW = if rsi > 95 then 10 else if rsi < 5 then -10 else 0;
 def mfi = if mf > 50 then 5 else if mf < 40 then -5 else 0;

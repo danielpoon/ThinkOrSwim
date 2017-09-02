@@ -28,7 +28,7 @@ def bomp = BalanceOfMarketPower();
 def cc = CCI();
 
 # Indicator Scoring
-def bb = if bbCalc > 95 then 5 else if bbCalc < 5 then -5 else 0;
+def bb = if bbCalc > 95 then 5 else if (bbCalc between 0 and 5) or (bbCalc < 0 and bbCalc > bbCalc[1]) then -5 else 0;
 def cci = if cc > 100 then 5 else if cc < -100 then -5 else 0;
 def macd = if macd1 > 0 and macd2 > 0 then 5 else if macd1 < 0 and macd2 < 0 then -5 else 0;
 def roc = if change > 1 and change > ExpAverage(change, 10) then 5 else if change < 1 and change < ExpAverage(change, 10) then -5 else 0;

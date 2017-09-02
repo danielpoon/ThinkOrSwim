@@ -16,7 +16,7 @@ declare lower;
 input smooth = 1;
 
 # Study Definitions
-def bbCalc = bollingerPercentB();
+def bbCalc = BollingerPercentB();
 def macd1 = MACD(8, 17);
 def macd2 = macd1 - (MACD(8, 10) - MACD(17, 20));
 def rsi = reference RSI(length = 2);
@@ -29,7 +29,7 @@ def bomp = BalanceOfMarketPower();
 def cc = CCI();
 
 # Indicator Scoring
-def bb = if bbCalc > 95 then 5 else if bbCalc < 5 then -5 else 0;
+def bb = if (bbCalc > 100 and bbCalc < bbCalc[1]) or (bbCalc between 95 and 100) then 5 else if  (bbCalc < 0 and bbCalc > bbCalc[1]) or (bbCalc between 0 and 5) then -5 else 0;
 def cci = if cc > 100 then 5 else if cc < -100 then -5 else 0;
 def macd = if macd1 > 0 and macd2 > 0 then 5 else if macd1 < 0 and macd2 < 0 then -5 else 0;
 def roc = if change > 1 and change > ExpAverage(change, 10) then 5 else if change < 1 and change < ExpAverage(change, 10) then -5 else 0;
@@ -59,5 +59,5 @@ pos55.HideTitle();
 neg55.HideTitle();
 
 # Alerts
-alert((sum == -55), "inSync LE", "alert type" = Alert.BAR, sound = Sound.Ding);
-alert((sum == 55), "inSync SE", "alert type" = Alert.BAR, sound = Sound.Ding);
+Alert((sum == -55), "inSync LE", "alert type" = Alert.BAR, sound = Sound.Ding);
+Alert((sum == 55), "inSync SE", "alert type" = Alert.BAR, sound = Sound.Ding);
