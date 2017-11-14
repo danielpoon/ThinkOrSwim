@@ -2,8 +2,8 @@
 
 # This is index is formed from signals on a variety of different technical indicators, and used
 # to determine extreme overbought/oversold values in the market.
-# Values higher or equal to 90 are considered to be high extreme levels. (short entry)
-# Values lower or equal than 10 are considered to be low extreme levels. (long entry)
+# Values higher or equal to 100 are considered to be high extreme levels. (short entry)
+# Values lower or equal than 0 are considered to be low extreme levels. (long entry)
 
 # Optimized for use on daily charts
 
@@ -36,22 +36,29 @@ def norm = ((sum - lowest_k) / (highest_k - lowest_k)) * 100;
 # Plots
 plot inSync = norm;
 inSync.Hide();
-plot bullish = norm == 0;
-plot bearish = norm == 100;
-plot extremeHigh = 90;
-extremeHigh.Hide();
-plot extremeLow = 10;
-extremeLow.Hide();
+inSync.AssignValueColor(if inSync >= 100 then Color.RED else if inSync <= 0 then Color.GREEN else Color.GRAY);
+inSync.SetLineWeight(2);
 
+plot bullish = norm == 0;
+bullish.SetLineWeight(5);
 bullish.SetDefaultColor(CreateColor(0, 255, 0));
 bullish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-bullish.SetLineWeight(5);
+
+plot bearish = norm == 100;
+bearish.SetLineWeight(5);
 bearish.SetDefaultColor(CreateColor(255, 0, 0));
 bearish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-bearish.SetLineWeight(5);
+
+plot extremeHigh = 90;
+extremeHigh.SetDefaultColor(Color.GRAY);
+extremeHigh.Hide();
+
+plot extremeLow = 10;
+extremeLow.SetDefaultColor(Color.GRAY);
+extremeLow.Hide();
 
 # Add label
-AddLabel(inSync, inSync, if inSync > 50 then Color.RED else if inSync < 50 then Color.GREEN else Color.GRAY);
+AddLabel(inSync, inSync, if inSync == 100 then Color.RED else if inSync == 0 then Color.GREEN else Color.GRAY);
 
 # Alerts
 Alert((norm == 0), "inSync LE", "alert type" = Alert.BAR, sound = Sound.Ding);
