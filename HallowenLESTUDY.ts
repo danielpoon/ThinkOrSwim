@@ -1,15 +1,12 @@
-# TD Ameritrade IP Company, Inc. (c) 2012-2017
 # https://tlc.thinkorswim.com/center/reference/Tech-Indicators/strategies/E-K/Halloween.html
-# used for ira/403b long term strategies/buy and hold strategies
 
 input price = close;
-input length = 30;
+input SMAlength = 30;
+input EMAlength = 300;
+input dollars = 10000;
 
-plot entry = GetMonth() == 10 and price > Average(price, length);
-plot exit = GetMonth() == 5;
+def Shares = AbsValue(Round(dollars / close));
 
-entry.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-entry.AssignValueColor(Color.GREEN);
-
-exit.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-exit.AssignValueColor(Color.RED);
+AddOrder(OrderType.BUY_AUTO, GetMonth() == 10 AND price > Average(price, SMAlength)
+AND Average(price, SMAlength) >= movavgExponential(price, EMAlength), tickColor = GetColor(1), arrowColor = GetColor(1), name = "HalloweenLE", tradeSize = Shares);
+AddOrder(OrderType.SELL_TO_CLOSE, GetMonth() == 5, tickColor = GetColor(2), arrowColor = GetColor(2), name = "HalloweenLX", tradeSize = Shares);

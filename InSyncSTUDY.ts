@@ -18,11 +18,10 @@ input rsios = 30;
 input mflength = 14;
 input mfob = 70;
 input mfos = 30;
-input mdvl = 0.8;
-input mdvh = 0.2;
+input mdvl = 0.75;
+input mdvh = 0.25;
 input OBsignal = 90;
 input OSsignal = 10;
-input volmultiplier = 2;
 input extremities = 2;
 
 # Study Definitions
@@ -39,11 +38,10 @@ def mfi = if mf > mfob then 5 else if mf < mfos then -5 else 0;
 #REQUIRED
 def mdv = if ((high - close) / (.001 + high - low) > mdvl) then -5 else if ((high - close) / (.001 + high - low) < mdvh) then 5 else 0; # close must be near the low
 #REQUIRED
-def pc = if Average(100 * (high / close - 1), 1) >= 2 then -5 else if Average(100 * (low / close - 1),1) >= extremities then 5 else 0; # high/low must be greater than n pct from close
+def pc = if Average(100 * (high / close - 1), 1) >= extremities then -5 else if Average(100 * (low / close - 1),1) <= -extremities then 5 else 0; # high/low must be greater than n pct from close
 #REQUIRED
-def gap = if close < close[1] AND high > low[1] then -5 else if close > close[1] AND low > high[1] then 5 else 0; # do NOT trade against a gap
-#REQUIRED
-def hv = VolumeAvg() < VolumeAvg().VolAvg * volmultiplier; # volume cannot be greater than 2 times the average
+def gap = if close <= close[1] AND high > low[1] then -5 else if close >= close[1] AND low < high[1] then 5 else 0; # do NOT trade against a gap
+
 
 # Point Sum
 def sum = bb + rsi_2 + rsi_14 + mfi + mdv;
@@ -59,12 +57,12 @@ inSync.Hide();
 inSync.AssignValueColor(if inSync >= OBsignal then Color.RED else if inSync <= OSsignal then Color.GREEN else Color.GRAY);
 inSync.SetLineWeight(2);
 
-plot bullish = norm <= OSsignal and mdv == -5 and pc == -5 and gap == -5 and hv;
+plot bullish = norm <= OSsignal and mdv == -5 and pc == -5 and gap == -5;
 bullish.SetLineWeight(5);
 bullish.SetDefaultColor(CreateColor(0, 255, 0));
 bullish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 
-plot bearish = norm >= OBsignal and mdv == 5 and pc == 5 and gap == 5 and hv;
+plot bearish = norm >= OBsignal and mdv == 5 and pc == 5 and gap == 5;
 bearish.SetLineWeight(5);
 bearish.SetDefaultColor(CreateColor(255, 0, 0));
 bearish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
