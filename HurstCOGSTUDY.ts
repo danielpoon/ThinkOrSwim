@@ -1,6 +1,3 @@
-# HurstCOG
-# DREWGRIFFITH15 (C) 2015
-
 declare upper;
 
 # Daily settings / 15 minute chart

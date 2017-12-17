@@ -1,6 +1,3 @@
-# KNOWSURETHING
-# DREWGRIFFITH15 (C) 2014
-
 declare lower;
 
 input RC1_LEN = 5;

@@ -1,6 +1,3 @@
-# MovingAvgDistance
-# DREWGRIFFITH5 (C) 2015
-
 declare lower;
 
 input price = close;

@@ -1,6 +1,3 @@
-# EXITALERT
-# DREWGRIFFITH15 (C) 2015
-
 # RSI2 will be used to determine exit.
 # Even on a loss, the RSI indicates a lower high sell point.
 # I see this as selling at a high for a stop loss.

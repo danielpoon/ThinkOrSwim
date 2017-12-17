@@ -1,6 +1,3 @@
-# SCTR
-# DREWGRIFFITH15 (C) 2015
-
 declare lower;
 
 input SMA200 = 200;

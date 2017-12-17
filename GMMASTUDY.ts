@@ -1,6 +1,3 @@
-# GMMA
-# DREWGRIFFITH15 (C) 2015
-
 input EMA1 = 3;
 input EMA2 = 5;
 input EMA3 = 7;

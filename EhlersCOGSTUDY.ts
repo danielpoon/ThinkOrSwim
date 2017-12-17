@@ -1,6 +1,3 @@
-# EhlersCOG
-# DREWGRIFFITH15 (C) 2014
-
 declare lower;
 
 input price = close;

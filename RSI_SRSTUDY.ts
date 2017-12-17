@@ -1,6 +1,3 @@
-# RSI_SR
-# DREWGRIFFITH15 (C) 2015
-
 declare lower;
 
 input RSI_LENGTH = 2;

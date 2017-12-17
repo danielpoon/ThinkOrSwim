@@ -1,8 +1,3 @@
-# VervoortCrossover
-# (c) 2009 http://www.thinkscripter.com
-# thinkscripter@gmail.com
-# Last Update 30 MAR 2009
-
 input period = 55;
 def price = (high+low+close)/3;
 

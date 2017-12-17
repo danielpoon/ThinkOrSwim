@@ -22,7 +22,7 @@ input mdvl = 0.75;
 input mdvh = 0.25;
 input OBsignal = 90;
 input OSsignal = 10;
-input extremities = 2;
+input extremities = 0.015; # percentage
 
 # Study Definitions
 def bbCalc = BollingerPercentB(length = bblength);
@@ -38,7 +38,7 @@ def mfi = if mf > mfob then 5 else if mf < mfos then -5 else 0;
 #REQUIRED
 def mdv = if ((high - close) / (.001 + high - low) > mdvl) then -5 else if ((high - close) / (.001 + high - low) < mdvh) then 5 else 0; # close must be near the low
 #REQUIRED
-def pc = if Average(100 * (high / close - 1), 1) >= extremities then -5 else if Average(100 * (low / close - 1),1) <= -extremities then 5 else 0; # high/low must be greater than n pct from close
+def pc = if Average((high / close - 1), 1) >= extremities then -5 else if Average((low / close - 1),1) <= -extremities then 5 else 0; # high/low must be greater than n pct from close
 #REQUIRED
 def gap = if close <= close[1] AND high > low[1] then -5 else if close >= close[1] AND low < high[1] then 5 else 0; # do NOT trade against a gap
 

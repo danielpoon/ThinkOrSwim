@@ -1,6 +1,3 @@
-# Scalper
-# DREWGRIFFITH15 (C) 2015
-
 # inputs based on 2 minute chart
 
 declare upper;

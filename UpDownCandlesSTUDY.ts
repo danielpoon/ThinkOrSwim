@@ -1,6 +1,3 @@
-# UP vs Down Candles
-# DREWGRIFFITH15 (C) 2017
- 
 declare lower;
  
 # Daily settings

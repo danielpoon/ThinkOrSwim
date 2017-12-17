@@ -1,7 +1,3 @@
-# PercentCorrection
-
-# designed for use on daily charts
-
 input periods = 252;
 
 def mode = if close > close[periods] then 1 #BULL

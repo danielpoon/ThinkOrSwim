@@ -1,6 +1,3 @@
-# BUYANDHOLD
-# DREWGRIFFITH15 (C) 2014
-
 input price = close;
 input month_entry = 6;
 input month_exit = 7;

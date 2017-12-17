@@ -1,6 +1,3 @@
-# CANDLESTICKER
-# DREWGRIFFITH15 (C) 2014
-
 declare upper;
 
 plot BULLISH =

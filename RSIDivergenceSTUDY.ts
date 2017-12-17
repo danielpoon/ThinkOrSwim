@@ -1,5 +1,3 @@
-# RSIDIVERGENCE
-
 declare lower;
 
 input nRSI = 2;
@@ -17,8 +15,6 @@ def c = close;
 def cond1 = CompoundValue(1, if IsNaN(c)
                             then cond1[1]
                             else c, c);
-
-
 
 # RSI Wilder with Divergence Markers
 def NetChgAvg = WildersAverage(c - c[1], nRSI);

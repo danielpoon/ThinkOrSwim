@@ -1,6 +1,3 @@
-# UNUSUALVOLUME
-# DREWGRIFFITH15 (C) 2014
-
 input price = volume;
 input choice = {default increased, decreased};
 input percent = 10;

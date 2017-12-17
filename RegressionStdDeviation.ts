@@ -1,6 +1,3 @@
-# RegressionStdDeviation
-# DREWGRIFFITH15 (C) 2015
-
 declare upper;
 
 input price = close;

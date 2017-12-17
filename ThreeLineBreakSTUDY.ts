@@ -1,6 +1,3 @@
-# THREELINEBREAK
-# DREWGRIFFITH15 (C) 2014
-
 ## NOT IN PRODUCTION ##
 
 def FirstLineHigh = if close[2] > close[3] then close[2] else close[3];
