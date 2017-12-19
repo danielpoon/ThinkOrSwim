@@ -24,6 +24,7 @@ def p = (e1 - e2) / e2 * 100;
 plot ppo = -Average(p, lag); # inverse of normal calc
 ppo.SetLineWeight(3);
 ppo.SetDefaultColor(Color.CYAN);
+ppo.AssignValueColor(if ppo >= h_res then Color.Green else if ppo <= l_res then Color.Red else Color.Cyan);
 
 plot buysignal = if  ppo < l_res and vix_lo > ema and vix_cl > vix_op then l_res else Double.NaN;
 buysignal.SetPaintingStrategy(PaintingStrategy.POINTS);

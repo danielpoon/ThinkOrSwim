@@ -1,11 +1,16 @@
-input ma1 = 9;
-input ma_len2 = 3;
-input buy_threshold = 0.95;
-input sell_threshold = 0.9;
+input VR_MA1 = 9;
+input VR_MA2 = 3;
+input res1 = 1.0;
+input res2 = .95;
+input res3 = .9;
+input ADX_threshold = 16;
+input ppo_ema1 = 1;
+input ppo_ema2 = 10;
+input ppo_price_ema = 10;
+input ppo_h_res = 12;
+input ppo_l_res = -12;
 input sym1 = "VIX3M";
 input sym2 = "VIX";
-input ADX_length = 14;
-input ADX_threshold = 15;
 input average_type = AverageType.EXPONENTIAL;
 input dollars = 10000;
 
@@ -14,17 +19,31 @@ def Shares = AbsValue(Round(dollars / close));
 def cl1 = close(sym1);
 def cl2 = close(sym2);
 
-def adx = ADX(length = ADX_length);
+def vix_op = open(sym2);
+def vix_cl = close(sym2);
+def vix_hi = high(sym2);
+def vix_lo = low(sym2);
 
-def ma_vRatio = Round(MovingAverage(average_type, cl2 / cl1, ma1), 3);
-def ma_vRatio2 = Round(MovingAverage(average_type, ma_vRatio, ma_len2), 3);
-def buysignal = (ma_vRatio[2] >= buy_threshold and ma_vRatio[1] >= buy_threshold and ma_vRatio <= buy_threshold)
-  or (ma_vRatio[10] > sell_threshold and ma_vRatio[1] > sell_threshold and ma_vRatio <= sell_threshold)
-  or (adx > ADX_threshold and ma_vRatio <= sell_threshold and highest(ma_vRatio,10) < sell_threshold and ma_vRatio < ma_vRatio2 and ma_vRatio[1] >= ma_vRatio2[1]);
-def exit = (ma_vRatio[1] < sell_threshold and ma_vRatio >= sell_threshold)
-  or (ma_vRatio[1] == sell_threshold and ma_vRatio > sell_threshold)
-  or (ma_vRatio[1] < buy_threshold and ma_vRatio >= buy_threshold)
-  or (adx <= ADX_threshold and ma_vRatio > ma_vRatio2);
+def adx = ADX();
+
+def e1 = MovAvgExponential(vix_cl, ppo_ema1);
+def e2 = MovAvgExponential(vix_cl, ppo_ema2);
+def ema = MovAvgExponential(vix_cl, ppo_price_ema);
+def p = (e1 - e2) / e2 * 100;
+def ppo = -Average(p, 1); # inverse of normal calc
+
+def ma_vRatio = Round(MovingAverage(average_type, cl2 / cl1, VR_MA1), 3);
+def ma_vRatio2 = Round(MovingAverage(average_type, ma_vRatio, VR_MA2), 3);
+
+def buysignal = (ma_vRatio[2] >= res2 and ma_vRatio[1] >= res2 and ma_vRatio <= res2)
+  or (ma_vRatio[10] > res3 and ma_vRatio[1] > res3 and ma_vRatio <= res3)
+  or (lowest(adx,10) > ADX_threshold and ma_vRatio <= res3 and Highest(ma_vRatio, 10) < res3 and ma_vRatio < ma_vRatio2 and ma_vRatio[1] >= ma_vRatio2[1])
+  or (ma_vRatio < res1 and high > low[1] and ppo < ppo_l_res and vix_lo > ema and vix_cl > vix_op); #CVR3; no gaps
+
+def exit = (ma_vRatio > res1)
+  or (ma_vRatio[1] <= res3 and ma_vRatio >= res3 and !buysignal)
+  or (ma_vRatio[1] <= res2 and ma_vRatio >= res2 and !buysignal)
+  or (adx <= ADX_threshold and ma_vRatio > ma_vRatio2 and !buysignal);
 
 AddOrder(OrderType.BUY_AUTO, buysignal, tickcolor = GetColor(1), arrowcolor = GetColor(1), name = "VRLE", tradeSize = Shares, price = close);
 AddOrder(OrderType.SELL_TO_CLOSE, exit, tickcolor = GetColor(2), arrowcolor = GetColor(2), name = "VRLX", tradeSize = Shares, price = close);
