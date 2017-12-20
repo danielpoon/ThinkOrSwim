@@ -45,5 +45,14 @@ def LX = (ma_vRatio > res1)
   or (ma_vRatio[1] < res2 and ma_vRatio >= res2 and !LE)
   or (adx <= ADX_threshold and ma_vRatio > ma_vRatio2 and !LE);
 
-AddOrder(OrderType.BUY_AUTO, LE, tickcolor = GetColor(1), arrowcolor = GetColor(1), name = "VRLE", tradeSize = Shares, price = close);
-AddOrder(OrderType.SELL_TO_CLOSE, LX, tickcolor = GetColor(2), arrowcolor = GetColor(2), name = "VRLX", tradeSize = Shares, price = close);
+def signal = CompoundValue(1, if LE then 1
+  else if !LE and LX and ma_vRatio >= res3 and ma_vRatio >= ma_vRatio2 then -1
+  else if LX then 0
+  else if !LX and !LE then signal[1]
+  else 0, 0);
+
+def SE = signal == -1;
+def SX = signal <> -1; #(ma_vRatio[1] > ma_vRatio2[1] and ma_vRatio <= ma_vRatio2) OR
+
+AddOrder(OrderType.SELL_TO_OPEN, SE, tickcolor = GetColor(1), arrowcolor = GetColor(1), name = "VRSE", tradeSize = Shares, price = close);
+AddOrder(OrderType.BUY_TO_CLOSE, SX, tickcolor = GetColor(2), arrowcolor = GetColor(2), name = "VRSX", tradeSize = Shares, price = close);
