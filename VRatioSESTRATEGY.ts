@@ -52,7 +52,11 @@ def signal = CompoundValue(1, if LE then 1
   else 0, 0);
 
 def SE = signal == -1;
-def SX = signal <> -1; #(ma_vRatio[1] > ma_vRatio2[1] and ma_vRatio <= ma_vRatio2) OR
+def entryPrice = CompoundValue(1, if !SE[1] and SE then close else entryPrice[1], 0);
+def pricetarget = if signal <> 0 and low < entryPrice - (entryPrice * 0.1) and open > entryPrice - (entryPrice * 0.1) then entryPrice - (entryPrice * 0.1)
+else if signal <> 0 and low < entryPrice - (entryPrice * 0.1) and open <= entryPrice - (entryPrice * 0.1) then open
+else Double.NaN;
+def SX = signal <> -1;
 
 AddOrder(OrderType.SELL_TO_OPEN, SE, tickcolor = GetColor(1), arrowcolor = GetColor(1), name = "VRSE", tradeSize = Shares, price = close);
 AddOrder(OrderType.BUY_TO_CLOSE, SX, tickcolor = GetColor(2), arrowcolor = GetColor(2), name = "VRSX", tradeSize = Shares, price = close);
