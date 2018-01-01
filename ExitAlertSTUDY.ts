@@ -2,7 +2,7 @@
 # Even on a loss, the RSI indicates a lower high sell point.
 # I see this as selling at a high for a stop loss.
 
-# 75 for long / 25 for short for Daily chart
+# 80 for long / 20 for short for Daily chart
 # 90 for long / 10 for short for 15min chart
 # 85 for long / 15 for short for 30min chart
 

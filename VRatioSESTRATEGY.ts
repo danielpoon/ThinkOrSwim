@@ -38,7 +38,7 @@ def ma_vRatio2 = Round(MovingAverage(average_type, ma_vRatio, VR_MA2), 3);
 def LE = (ma_vRatio[1] >= res2 and ma_vRatio <= res2)
   or (ma_vRatio[10] > res3 and ma_vRatio[1] > res3 and ma_vRatio <= res3)
   or (highest(ma_vRatio, 10) < res3 and lowest(adx,10) > ADX_threshold and ma_vRatio <= res3 and ma_vRatio < ma_vRatio2 and ma_vRatio[1] >= ma_vRatio2[1])
-  or (ma_vRatio < res1 and high > low[1] and ppo < ppo_l_res and vix_lo > ema and vix_cl > vix_op and ((high - close) / (.001 + high - low) > 0.5)); #CVR3; no gaps; long red candlestick
+  or (ma_vRatio < res1 and high > low[1] and ppo < ppo_l_res and vix_lo > ema and vix_cl > vix_op and ((high - close) / (.001 + high - low) > 0.5) and adx >= ADX_threshold); #CVR3; no gaps; long red candlestick
 
 def LX = (ma_vRatio > res1)
   or (ma_vRatio[1] < res3 and ma_vRatio >= res3 and !LE)
