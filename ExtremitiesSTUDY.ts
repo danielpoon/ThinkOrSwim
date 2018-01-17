@@ -1,9 +1,7 @@
-# Extremities
-
 declare lower;
 
 input length = 1;
-input price = close;
+input aggregration = AggregationPeriod.DAY;
 
-plot PercentChgHi = average(100 * (high / price - 1),length);
-plot PercentChgLo = average(100 * (low / price - 1),length);
+plot PercentChgHi = Average(100 * (high(PERIOD = aggregration) / close(PERIOD = aggregration) - 1), length);
+plot PercentChgLo = Average(100 * (low(PERIOD = aggregration) / close(PERIOD = aggregration) - 1), length);

@@ -1,3 +1,7 @@
+# SCTR
+# Drew Griffith
+#hint: This study is a replication of stockcharts technical ranking. (http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr)
+
 declare lower;
 
 input SMA200 = 200;
@@ -10,9 +14,6 @@ input LT_WEIGHT = .30;
 input MD_WEIGHT = .15;
 input SH_WEIGHT = .05;
 input SR_LENGTH = 40;
-
-# THIS STUDY IS A REPLICATION OF STOCKCHARTS TECHNICAL RANKING
-# http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr
 
 #Long-Term Indicators (weighting)
 #  * Percent above/below 200-day SMA (30%)
@@ -81,5 +82,8 @@ LONG_SR_LOW.SetDefaultColor(Color.CYAN);
 #LONG_SR_LOW.SetStyle(Curve.SHORT_DASH);
 LONG_SR_LOW.SetLineWeight(1);
 LONG_SR_LOW.Hide();
+
+# Add label
+AddLabel(SCTR, "SCTR = " + SCTR, if SCTR >= ZERO then Color.GREEN else if SCTR < ZERO then Color.RED else Color.GRAY);
 
 ### $$$ ###

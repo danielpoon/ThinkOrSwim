@@ -1,5 +1,4 @@
 # HurstOscillator
-# DREWGRIFFITH15 (C) 2015
 
 declare lower;
 

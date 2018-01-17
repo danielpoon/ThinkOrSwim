@@ -19,7 +19,6 @@ input IMILength = 12;
 input IMIob = 70;
 input IMIos = 30;
 
-
 def BBupper = BollingerBands(length = BBlength).UpperBand;
 def BBlower = BollingerBands(length = BBlength).LowerBand;
 
