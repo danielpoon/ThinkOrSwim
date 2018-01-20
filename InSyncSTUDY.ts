@@ -57,14 +57,16 @@ SE.SetDefaultColor(Color.RED);
 SE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
 
 # Show price targets
-def pricetarget = if LE and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities * 2) then ((close[0] * (Average((high[0] / close[0] - 1), 1)) / 2) + close[0])
-    else if LE and Average(100 * (high[0] / close[0] - 1), 1) < (extremities * 2) then ((close[0] * (extremities / 100)) + close[0])
+def pricetarget = if LE and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) <= 9 then HIGH
+    else if LE and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) > 9 then ((close[0] * (Average((high[0] / close[0] - 1), 1)) / 2) + close[0])
+    else if LE and Average(100 * (high[0] / close[0] - 1), 1) < (extremities) then ((close[0] * (extremities / 100)) + close[0])
     else Double.NaN;
 
 def pt = if LE then pricetarget
     else if LE[1] then pricetarget[1]
     else if LE[2] then pricetarget[2]
-    else if LE[3] then close[3]
+    else if LE[3] then pricetarget[3]
+    else if LE[4] then close[4]
     else Double.NaN;
 
 plot target = pt;
