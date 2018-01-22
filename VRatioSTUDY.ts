@@ -45,22 +45,43 @@ def ema = MovAvgExponential(vix_cl, 10);
 def p = (e1 - e2) / e2 * 100;
 def ppo = -Average(p, 1); # inverse of normal calc
 
+# calc EMA5 and EMA300
+def ema5 = MovAvgExponential(length = 5);
+def ema300 = MovAvgExponential(length = 300);
+
 # calc vRatio
 plot ma_vRatio = Round(MovingAverage(average_type, cl2 / cl1, ma_len), 3);
 plot ma_vRatio2 = Round(MovingAverage(average_type, ma_vRatio, ma_len2), 3);
 
-def LE = (ma_vRatio[1] >= res2 and ma_vRatio <= res2)
-  or (ma_vRatio[10] > res3 and ma_vRatio[1] > res3 and ma_vRatio <= res3)
-  or (Highest(ma_vRatio, 10) < res3 and Lowest(adx, 10) > ADX_threshold and ma_vRatio <= res3 and ma_vRatio < ma_vRatio2 and ma_vRatio[1] >= ma_vRatio2[1])
-  or (ma_vRatio < res1 and xiv_hi > xiv_lo[1] and ppo < ppo_l_res and vix_lo > ema and vix_cl > vix_op and ((xiv_hi - xiv_cl) / (.001 + xiv_hi - xiv_lo) > 0.5) and adx >= ADX_threshold); #CVR3; no gaps; long red candlestick
+def CVR3enrtry = if ppo < ppo_l_res and vix_lo > ema and vix_cl > vix_op then 1 else 0;
 
-def LX = (ma_vRatio > res1)
+def LE = (ma_vRatio[1] >= res2 and ma_vRatio <= res2)
+  or (ma_vRatio[10] > res3
+      and ma_vRatio[1] > res3
+      and ma_vRatio <= res3)
+  or (Highest(ma_vRatio, 10) < res3
+      and Lowest(ADX, 10) > ADX_threshold
+      and ma_vRatio <= res3
+      and ma_vRatio < ma_vRatio2
+      and ma_vRatio[1] >= ma_vRatio2[1])
+  or (ma_vRatio < res1
+      and CVR3enrtry == 1
+      and xiv_hi > xiv_lo[1]
+      and ((xiv_hi - xiv_cl) / (.001 + xiv_hi - xiv_lo) > 0.5)
+      and ADX >= ADX_threshold
+      and (open > ema300 and close > ema300 or open < ema300 and close < ema300))
+  or (ma_vRatio < res1
+      and Highest(CVR3enrtry, 5) > 0
+      and (close > ema300) and (close > ema5));
+
+def LX = (ma_vRatio >= res1)
   or (ma_vRatio[1] < res3 and ma_vRatio >= res3 and !LE)
   or (ma_vRatio[1] < res2 and ma_vRatio >= res2 and !LE)
-  or (adx <= ADX_threshold and ma_vRatio > ma_vRatio2 and !LE);
+  or (ADX <= ADX_threshold and ma_vRatio > ma_vRatio2 and !LE);
 
 def signal = if LE then 1
-  else if !LE and LX and ma_vRatio >= res3 and ma_vRatio >= ma_vRatio2 then -1
+  else if (ma_vRatio >= res1) then -1
+  else if (ma_vRatio[1] >= res1) and (ma_vRatio < res1) then 0
   else if LX then 0
   else if !LX and !LE then signal[1]
   else 0;
@@ -71,7 +92,7 @@ plot r3 = res3;
 
 ma_vRatio.AssignValueColor(if signal == 1 then Color.GREEN
     else if signal == -1 then Color.RED
-    else Color.BLUE);
+    else Color.DARK_GRAY);
 ma_vRatio.SetLineWeight(3);
 
 ma_vRatio2.SetLineWeight(3);
@@ -85,9 +106,13 @@ r3.SetLineWeight(1);
 r3.SetDefaultColor(Color.YELLOW);
 
 DefineGlobalColor("BULLISH", Color.UPTICK);
-DefineGlobalColor("NEUTRAL", Color.BLUE);
+DefineGlobalColor("NEUTRAL", Color.DARK_GRAY);
 DefineGlobalColor("BEARISH", Color.DOWNTICK);
 AssignPriceColor(if !PAINTBARS then Color.CURRENT
   else if signal == 1 then GlobalColor("BULLISH")
   else if signal == -1 then GlobalColor("BEARISH")
   else GlobalColor("NEUTRAL"));
+
+# Alerts
+Alert(signal == 1 and signal[1] <> 1, "Long Entry XIV", "alert type" = Alert.BAR, sound = Sound.Ding);
+Alert(signal == -1 and signal[1] <> -1, "Long Entry VXX", "alert type" = Alert.BAR, sound = Sound.Ding);
