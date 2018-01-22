@@ -1,3 +1,8 @@
+# VRatio
+# Drew Griffith
+# Version 0.2
+#hint: An adaptation of the Volatility Risk Premium strategy. Strategy is effectively observe near/at the close, buy at the close.
+
 input ma_len = 9; # 10
 input ma_len2 = 3; # 10
 input res1 = 1.0;
