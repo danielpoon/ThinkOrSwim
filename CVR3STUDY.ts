@@ -1,6 +1,5 @@
-# CVR3
-# Drew Griffith
-#hint: The CVR3 is a short-term trading strategy using the CBOE Volatility Index ($VIX) to time the S&P 500. Developed by Larry Connors and Dave Landry, this strategy looks for overextended VIX readings to signal excessive fear or greed in the stock market. Excessive fear is used to generate buy signals in this mean-reversion strategy, while excessive greed is used to generate sell signals. http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cvr3_vix_market_timi
+#The CVR3 is a short-term trading strategy using the CBOE Volatility Index ($VIX) to time the S&P 500. Developed by Larry Connors and Dave Landry, this strategy looks for overextended VIX readings to signal excessive fear or greed in the stock market. Excessive fear is used to generate buy signals in this mean-reversion strategy, while excessive greed is used to generate sell signals.
+#http://stockcharts.com/school/doku.php?id=chart_school:trading_strategies:cvr3_vix_market_timi
 
 declare lower;
 
@@ -25,7 +24,7 @@ def p = (e1 - e2) / e2 * 100;
 plot ppo = -Average(p, lag); # inverse of normal calc
 ppo.SetLineWeight(3);
 ppo.SetDefaultColor(Color.CYAN);
-ppo.AssignValueColor(if ppo >= h_res then Color.Green else if ppo <= l_res then Color.Red else Color.Cyan);
+ppo.AssignValueColor(if ppo >= h_res then Color.RED else if ppo <= l_res then Color.CYAN else Color.GRAY);
 
 plot buysignal = if  ppo < l_res and vix_lo > ema and vix_cl > vix_op then l_res else Double.NaN;
 buysignal.SetPaintingStrategy(PaintingStrategy.POINTS);

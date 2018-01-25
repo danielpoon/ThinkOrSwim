@@ -1,42 +1,53 @@
 # InSync
 # Drew Griffith
-#hint: Mean Reversion Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremeties input. For good, long term trending stocks (above EMA300), the requirements for entry are not as strict in setting overbought/sold signals. For stocks that signal against the long term trend the entry requirements are more strict. The requirements for shorting signals are much more strict than long signals. Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The study will paint suggested exits during the 1-3 days following the entry. Ideal hold times are less than 3 days. On day 3, the position moves to breakeven. The study will paint suggested exits during the 1-3 days following the entry.
+
+#hint: Mean Reversion Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremeties input. For good, long term trending stocks (above EMA300), the requirements for entry are not as strict in setting overbought/sold signals. For stocks that signal against the long term trend the entry requirements are more strict. The requirements for shorting signals are much more strict than long signals. Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is normally the high price of the day of entry. Ideal hold times are less than 3-4 days. On day 3-4, the position moves to breakeven. Optimized for use on daily charts
 
 declare upper;
 
-input ma_length = 300;
-input bblength = 20;
-input bbob = 100;
-input bbos = 0;
-input rsi2length = 2;
-input rsi2ob = 99;
+input extremities = 1.5; #percentage
+def ma_length = 300;
+def bb_length = 20;
+def bbob = 100;
+def bbos = 5;
+def rsi2_length = 2;
+input rsi2ob = 98;
 input rsi2os = 5;
-input rsi14length = 14;
-input rsi14ob = 80;
-input rsi14os = 30;
-input mfilength = 14;
-input mfiob = 80;
-input mfios = 30;
-input bmplength = 14;
-input mdvl = 0.6;
-input mdvh = 0.4;
-input extremities = 1.5; # percentage
+def rsi14_length = 14;
+def rsi14ob = 80;
+def rsi14os = 30;
+def stoch_length = 14;
+def mfi_length = 14;
+def mfiob = 80;
+def mfios = 30;
+def bmp_length = 14;
+def mdvl = 0.6;
+def mdvh = 0.4;
 
 # Study Definitions
-def maCalc = MovAvgExponential(length = ma_length);
-def bbCalc = BollingerPercentB(length = bblength);
-def rsi2Calc = RSI(length = rsi2length);
-def rsi14Calc = RSI(length = rsi14length);
-def mfiCalc = MoneyFlowIndex(length = mfilength);
-def bmpCalc = BalanceOfMarketPower(length = bmplength);
+def bbCalc = BollingerPercentB(length = bb_length);
+def rsi2 = RSI(length = rsi2_length);
+def rsi14 = RSI(length = rsi14_length);
+def stoch = StochasticFull("k period" = stoch_length);
+def mf = MoneyFlowIndex(length = mfi_length);
+def bomp = BalanceOfMarketPower(length = bmp_length);
+def ema = MovAvgExponential(length = ma_length);
 
-# indicator Scoring/Requirements
-def ma = if close >= maCalc then -1 else 1;
-def bb = if (bbCalc >= bbob) then 1 else if (bbCalc <= bbos) then -1 else 0;
-def rsi2 = if rsi2Calc >= rsi2ob then 1 else if rsi2Calc <= rsi2os then -1 else 0;
-def rsi14 = if rsi14Calc >= rsi14ob then 1 else if rsi14Calc <= rsi14os then -1 else 0;
-def mfi = if mfiCalc >= mfiob then 1 else if mfiCalc <= mfios then -1 else 0;
-def bmp = if bmpCalc >= 0 then 1 else if bmpCalc <= 0 then -1 else 0;
+# Indicator Scoring (shorting is more strict)
+def bb = if bbCalc > bbob then 5 else if bbCalc < bbos then -5 else 0;
+def sto = if stoch > 80 then 5 else if stoch < 20 then -5 else 0;
+def rsi_2 = if rsi2 > rsi2ob then 5 else if rsi2 < rsi2os then -5 else 0;
+def rsi_14 = if rsi14 > rsi14ob then 5 else if (rsi14 < rsi14os + 5 and close > ema) then -5 else if (rsi14 < rsi14os and close < ema) then -5 else 0;
+def mfi = if mf > mfiob then 5 else if mf < mfios then -5 else 0;
+def bop = if bomp > 0 then 5 else if bomp < 0 then -5 else 0;
+
+# Point Sum
+def sum = bb + sto + rsi_2 + rsi_14 + mfi + bop;
+
+# Normalize 0-100
+def lowest_k = -30;
+def highest_k = 30;
+def norm = ((sum - lowest_k) / (highest_k - lowest_k)) * 100;
 
 # close must be near the low/high
 def mdv = if ((high - close) / (.001 + high - low) >= mdvl) then -1 else if ((high - close) / (.001 + high - low) <= mdvh) then 1 else 0;
@@ -45,41 +56,25 @@ def pc = if ((high / close - 1) * 100) >= extremities then -1 else if ((low / cl
 # do NOT trade against a gap
 def gap = if close <= close[1] and high > low[1] then -1 else if close >= close[1] and low < high[1] then 1 else 0;
 
-plot LE = if (bb + rsi2 + rsi14 + mfi + bmp) <= -5 and mdv == -1 and pc == -1 and gap == -1 then 1 else if ma == -1 and bb == -1 and rsi2 == -1 and mdv == -1 and pc == -1 and gap == -1 then 1 else 0;
+# Plots
+plot inSync = norm;
+inSync.Hide();
+plot bullish = norm == 0 and mdv == -1 and pc == -1 and gap == -1;
+plot bearish = norm == 100 and mdv == 1 and pc == 1 and gap == 1;
 
-plot SE = if (bb + rsi2 + rsi14 + mfi + bmp) >= 5 and mdv == 1 and pc == 1 and gap == 1 then 1 else if ma == 1 and bb == 1 and rsi2 == 1 and mdv == 1 and pc == 1 and gap == 1 then 1 else 0;
-
-LE.SetLineWeight(3);
-LE.SetDefaultColor(Color.GREEN);
-LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-SE.SetLineWeight(3);
-SE.SetDefaultColor(Color.RED);
-SE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-
-# Show price targets
-def pricetarget = if LE and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) <= 9 then HIGH
-    else if LE and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) > 9 then ((close[0] * (Average((high[0] / close[0] - 1), 1)) / 2) + close[0])
-    else if LE and Average(100 * (high[0] / close[0] - 1), 1) < (extremities) then ((close[0] * (extremities / 100)) + close[0])
-    else Double.NaN;
-
-def pt = if LE then pricetarget
-    else if LE[1] then pricetarget[1]
-    else if LE[2] then pricetarget[2]
-    else if LE[3] then pricetarget[3]
-    else if LE[4] then close[4]
-    else Double.NaN;
-
-plot target = pt;
-target.SetPaintingStrategy(PaintingStrategy.DASHES);
-target.SetLineWeight(3);
-target.AssignValueColor(if high < pt then Color.RED else Color.WHITE);
-
-plot sum = bb + rsi2 + rsi14 + mfi + bmp + mdv + pc + gap;
-sum.hide();
+bullish.SetDefaultColor(CreateColor(0, 255, 0));
+bullish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+bullish.SetLineWeight(5);
+bearish.SetDefaultColor(CreateColor(255, 0, 0));
+bearish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
+bearish.SetLineWeight(5);
 
 # Add label
-AddLabel(1, "InSync = " + sum , if LE then Color.GREEN else if SE then Color.RED else Color.GRAY);
+AddLabel(inSync, inSync, if bullish then Color.RED else if bearish then Color.GREEN else Color.GRAY);
+
+# Alerts
+Alert((norm == 0), "inSync LE", "alert type" = Alert.BAR, sound = Sound.Ding);
+Alert((norm == 100), "inSync SE", "alert type" = Alert.BAR, sound = Sound.Ding);
 
 # Needed for Watchlist box painting
-#AssignBackgroundColor(if SE then Color.RED else if LE then Color.GREEN else Color.Gray);
-#END
+#AssignBackgroundColor(if norm == 100 then Color.RED else if norm == 0 then Color.GREEN else Color.Gray);
