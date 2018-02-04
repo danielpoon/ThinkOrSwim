@@ -5,9 +5,8 @@ declare lower;
 input Price_RSI_Period = 3;
 input Streak_RSI_Period = 2;
 input Rank_Lookback = 100;
-input OVER_BOUGHT = 90;
-input OVER_SOLD = 10;
-input SR_LENGTH = 35;
+input OVER_BOUGHT = 95;
+input OVER_SOLD = 5;
 input PRICE = CLOSE;
 
 # Component 1: the RSI of closing price
@@ -30,27 +29,13 @@ r + (GetValue(ROC1, i, Rank_Lookback) < ROC1) ;
 def pctRank = (rank / Rank_Lookback) * 100 ;
 
 # The final ConnorsRSI calculation, combining the three components
-plot ConnorsRSI = round((priceRSI + streakRSI + pctRank) / 3, NUMBEROFDIGITS = 0);
+plot ConnorsRSI = Round((priceRSI + streakRSI + pctRank) / 3, NUMBEROFDIGITS = 0);
 
-plot SR_HIGH = Round(Highest(ConnorsRSI, LENGTH = SR_LENGTH), NUMBEROFDIGITS = 0);
-
-plot SR_LOW = Round(Lowest(ConnorsRSI, LENGTH = SR_LENGTH), NUMBEROFDIGITS = 0);
-
-ConnorsRSI.AssignValueColor(if ConnorsRSI >= OVER_BOUGHT then Color.Red else if ConnorsRSI <= OVER_SOLD then Color.Green else Color.Gray);
+ConnorsRSI.AssignValueColor(if ConnorsRSI >= OVER_BOUGHT then Color.RED else if ConnorsRSI <= OVER_SOLD then Color.GREEN else Color.GRAY);
 ConnorsRSI.SetLineWeight(3);
-
-SR_HIGH.SetDefaultColor(Color.CYAN);
-SR_HIGH.SetLineWeight(1);
-
-SR_LOW.SetDefaultColor(Color.CYAN);
-SR_LOW.SetLineWeight(1);
 
 plot OVERBOUGHT = OVER_BOUGHT;
 OVERBOUGHT.SetDefaultColor(Color.DARK_GRAY);
-OVERBOUGHT.Hide();
-OVERBOUGHT.HideBubble();
 
 plot OVERSOLD = OVER_SOLD;
 OVERSOLD.SetDefaultColor(Color.DARK_GRAY);
-OVERSOLD.Hide();
-OVERSOLD.HideBubble();

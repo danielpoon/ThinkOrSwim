@@ -1,9 +1,15 @@
-# InSync
+# InSyncX
 # Drew Griffith
 
-#hint: Mean Reversion ENTRY Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremeties input. For good, long term trending stocks (above EMA300), the requirements for entry are not as strict in setting overbought/sold signals. For stocks that signal against the long term trend the entry requirements are more strict. The requirements for shorting signals are much more strict than long signals. Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is sumally the high price of the day of entry. Ideal hold times are less than 3-4 days. On day 3-4, the position moves to breakeven. Optimized for use on daily charts.
+#hint: Mean Reversion EXIT Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremeties input. For good, long term trending stocks (above EMA300), the requirements for entry are not as strict in setting overbought/sold signals. For stocks that signal against the long term trend the entry requirements are more strict. The requirements for shorting signals are much more strict than long signals. Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is sumally the high price of the day of entry. Ideal hold times are less than 3-4 days. On day 3-4, the position moves to breakeven. Optimized for use on daily charts. This script portion that determines entry should be the same as InSync. The code for InSync.LX/SX has been removed so that code in the InSync entry will run faster in watchlist scans.
 
 declare upper;
+
+input extremities = 1.5; #percentage
+input rsi2ob = 98;
+input rsi2os = 5;
+
+script insync {
 
 input extremities = 1.5; #percentage
 def ma_length = 300;
@@ -55,7 +61,7 @@ def gap = if close <= close[1] and high > low[1] then -1 else if close >= close[
 plot inSync = sum;
 inSync.Hide();
 plot long_warning = sum == -100 and (mdv + pc + gap) <> -3;
-Long_warning.SetDefaultColor(Color.CYAN);
+Long_warning.SetDefaultColor(Color.YELLOW);
 Long_warning.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 Long_warning.SetLineWeight(3);
 plot long_confirmed = sum == -100 and (mdv + pc + gap) == -3;
@@ -64,24 +70,34 @@ long_confirmed.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 long_confirmed.SetLineWeight(5);
 
 plot short_warning = sum == 100 and (mdv + pc + gap) <> 3;
-short_warning.SetDefaultColor(Color.MAGENTA);
+short_warning.SetDefaultColor(Color.ORANGE);
 short_warning.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-short_warning.SetLineWeight(3);
+short_warning.SetLineWeight(5);
 plot short_confirmed = sum == 100 and (mdv + pc + gap) == 3;
 short_confirmed.SetDefaultColor(Color.RED);
 short_confirmed.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
 short_confirmed.SetLineWeight(5);
+}
 
-AddLabel(inSync, inSync, if sum == 100 and (mdv + pc + gap) == 3 then Color.RED else if sum == -100 and (mdv + pc + gap) == -3 then Color.GREEN else if sum == -100 and (mdv + pc + gap) <> -3 then Color.CYAN else if sum == 100 and (mdv + pc + gap) <> 3 then Color.MAGENTA else Color.GRAY);
+#def bullish = inSync()==-100;
+def bullish = inSync().long_confirmed;
 
-#AddVerticalLine(sum == -100 and (mdv + pc + gap) <> -3,  "Long: Warning!", Color.Yellow, Curve.LONG_DASH);
-#AddVerticalLine(sum == -100 and (mdv + pc + gap) == -3,  "Long: Confirmed!", Color.GREEN, Curve.LONG_DASH);
-#AddVerticalLine(sum == 100 and (mdv + pc + gap) <> 3,  "Short: Warning!", Color.ORANGE, Curve.SHORT_DASH);
-#AddVerticalLine(sum == 100 and (mdv + pc + gap) == 3,  "Short: Confirmed!", Color.RED, Curve.SHORT_DASH);
+# Show price targets (if high is greater than 9%, then use midbody value of candle)
+def pricetarget = if bullish and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) <= 9 then HIGH
+    else if bullish and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) > 9 then ((close[0] * (Average((high[0] / close[0] - 1), 1)) / 2) + close[0])
+    else if bullish and Average(100 * (high[0] / close[0] - 1), 1) < (extremities) then ((close[0] * (extremities / 100)) + close[0])
+    else Double.NaN;
 
-## Alerts
-Alert(sum == 0, "inSync Long Entry", "alert type" = Alert.BAR, sound = Sound.Ding);
-Alert(sum == 100, "inSync Short Entry", "alert type" = Alert.BAR, sound = Sound.Ding);
+def pt = if bullish then pricetarget
+    else if bullish[1] then pricetarget[1]
+    else if bullish[2] then pricetarget[2]
+    else if bullish[3] then pricetarget[3]
+    else if bullish[4] then pricetarget[4]
+    else if bullish[5] then close[5]
+    else Double.NaN;
 
-## Needed for Watchlist box painting
-#AssignBackgroundColor(if sum == 100 and (mdv + pc + gap) == 3 then Color.RED else if sum == -100 and (mdv + pc + gap) == -3 then Color.GREEN else if sum == -100 and (mdv + pc + gap) <> -3 then Color.CYAN else if sum == 100 and (mdv + pc + gap) <> 3 then Color.MAGENTA else Color.GRAY);
+plot target = pt;
+
+target.SetPaintingStrategy(PaintingStrategy.DASHES);
+target.SetLineWeight(3);
+target.AssignValueColor(if high < pt then Color.RED else Color.WHITE);
