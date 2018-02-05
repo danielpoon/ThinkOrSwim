@@ -5,33 +5,24 @@
 
 declare upper;
 
-input extremities = 1.5; #percentage
-input rsi2ob = 98;
-input rsi2os = 5;
+input BubbleOn = yes;
+input extremities = 2.0; #percentage
 
 script insync {
 
-input extremities = 1.5; #percentage
-def ma_length = 300;
+input BubbleOn = yes;
+input extremities = 2.0; #percentage
+def ema_length = 300;
+def slope_length = 60;
 def bb_length = 20;
-def bbob = 100;
-def bbos = 5;
 def rsi2_length = 2;
-input rsi2ob = 98;
-input rsi2os = 5;
 def rsi14_length = 14;
-def rsi14ob = 80;
-def rsi14os = 30;
 def stoch_length = 14;
 def mfi_length = 14;
-def mfiob = 80;
-def mfios = 30;
 def bmp_length = 14;
 def mdvl = 0.6;
-def mdvh = 0.4;
 
-## Study Definitions
-def ema = MovAvgExponential(length = ma_length);
+## Does stock meet indicator requirements? (no shorting)
 def bbCalc = BollingerPercentB(length = bb_length);
 def stoch = StochasticFull("k period" = stoch_length);
 def rsi2 = RSI(length = rsi2_length);
@@ -39,48 +30,45 @@ def rsi14 = RSI(length = rsi14_length);
 def mf = MoneyFlowIndex(length = mfi_length);
 def bomp = BalanceOfMarketPower(length = bmp_length);
 
-## Indicator Scoring (shorting is more strict); TOTAL equals for short (100) and long (-100)
-def bb = if bbCalc > bbob then 20 else if bbCalc < bbos then -20 else 0;
-def sto = if stoch > 80 then 15 else if stoch < 20 then -15 else 0;
-def rsi_2 = if rsi2 > rsi2ob then 20 else if rsi2 < rsi2os then -20 else 0;
-def rsi_14 = if rsi14 > rsi14ob then 15 else if (rsi14 < rsi14os + 10 and close > ema) then -15 else if (rsi14 < rsi14os and close < ema) then -15 else 0;
-def mfi = if mf > mfiob then 15 else if (mf < mfios + 5 and close > ema) then -15 else if (mf < mfios and close < ema) then -15 else 0;
-def bop = if bomp > 0 then 15 else if bomp < 0 then -15 else 0;
+# Does stock meet ANY long term trend filters?
+def ema = close > MovAvgExponential(length = ema_length);
+def slp = LinearRegressionSlope(length = slope_length) > -0.03;
 
-## Point Sum
-def sum = bb + sto + rsi_2 + rsi_14 + mfi + bop;
+# Does stock meet "bar" components?
+def barcomponents = if ((high - close) / (.001 + high - low) >= mdvl) ## long candle; close below midbody
+  and ((high / close - 1) * 100) >= extremities ## high/low must be greater than n pct from close
+  and close <= close[1] and high > low[1] then 1 ## do NOT trade against a gap
+  else 0;
 
-## close must be near the low/high
-def mdv = if ((high - close) / (.001 + high - low) >= mdvl) then -1 else if ((high - close) / (.001 + high - low) <= mdvh) then 1 else 0;
-## high/low must be greater than n pct from close
-def pc = if ((high / close - 1) * 100) >= extremities then -1 else if ((low / close - 1) * 100) <= -extremities then 1 else 0;
-## do NOT trade against a gap
-def gap = if close <= close[1] and high > low[1] then -1 else if close >= close[1] and low < high[1] then 1 else 0;
+def signal = if (ema)
+  and barcomponents == 1
+  and bbCalc < 5
+  and stoch < 20
+  and rsi2 < 5
+  and rsi14 < 40
+  and mf < 35
+  and bomp < 0 then 1
+  else if (!ema and slp)
+  and barcomponents == 1
+  and bbCalc < 5
+  and stoch < 20
+  and rsi2 < 5
+  and rsi14 < 30
+  and mf < 30
+  and bomp < 0 then 1
+  else 0;
 
 ## Plots
-plot inSync = sum;
+plot inSync = rsi2;
 inSync.Hide();
-plot long_warning = sum == -100 and (mdv + pc + gap) <> -3;
-Long_warning.SetDefaultColor(Color.YELLOW);
-Long_warning.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-Long_warning.SetLineWeight(3);
-plot long_confirmed = sum == -100 and (mdv + pc + gap) == -3;
-long_confirmed.SetDefaultColor(Color.GREEN);
-long_confirmed.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-long_confirmed.SetLineWeight(5);
-
-plot short_warning = sum == 100 and (mdv + pc + gap) <> 3;
-short_warning.SetDefaultColor(Color.ORANGE);
-short_warning.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-short_warning.SetLineWeight(5);
-plot short_confirmed = sum == 100 and (mdv + pc + gap) == 3;
-short_confirmed.SetDefaultColor(Color.RED);
-short_confirmed.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
-short_confirmed.SetLineWeight(5);
+plot LE = signal == 1;
+LE.SetDefaultColor(Color.GREEN);
+LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+LE.SetLineWeight(1);
+AddChartBubble(BubbleOn and LE, low, "InSync", Color.GREEN, no);
 }
 
-#def bullish = inSync()==-100;
-def bullish = inSync().long_confirmed;
+def bullish = inSync().LE;
 
 # Show price targets (if high is greater than 9%, then use midbody value of candle)
 def pricetarget = if bullish and Average(100 * (high[0] / close[0] - 1), 1) >= (extremities) AND Average(100 * (high[0] / close[0] - 1), 1) <= 9 then HIGH
