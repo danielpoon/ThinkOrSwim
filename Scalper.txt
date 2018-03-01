@@ -1,4 +1,7 @@
-# inputs based on 2 minute chart
+# Scalper
+# Drew Griffith
+
+#hint: Intraday Day mean reversion strategy. Used on 2min charts.
 
 declare upper;
 

@@ -1,6 +1,7 @@
 # SCTR
 # Drew Griffith
-#hint: This study is a replication of stockcharts technical ranking. (http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr)
+
+#hint: This study is a replication of StockCharts SCTR. http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr
 
 declare lower;
 
@@ -19,7 +20,8 @@ input SR_LENGTH = 40;
 #  * Percent above/below 200-day SMA (30%)
 #  * 125-Day Rate-of-Change (30%)
 
-def SM200 = SimpleMovingAvg(close, SMA200);
+#def SM200 = SimpleMovingAvg(close, SMA200);
+def SM200 = movavgExponential(close, 300); # adjustment from standard
 def LTSMA = ((close - SM200) / ((close + SM200) / 2));
 def LTROC = RateOfChange(ROC125, close);
 def LT = (LTSMA + LTROC) * LT_WEIGHT;
@@ -56,7 +58,7 @@ def SH = (SHPPO + SHRSI) * SH_WEIGHT;
 
 def TR = Round(LT + MD + SH, NUMBEROFDIGITS = 1);
 
-plot SCTR = if IsNaN(TR) then 0 else TR;
+plot SCTR = if isNaN(TR) OR isInfinite(TR) then 0 else TR;
 
 plot LONG_SR_HIGH = Round(Highest(SCTR, LENGTH = SR_LENGTH), NUMBEROFDIGITS = 1);
 

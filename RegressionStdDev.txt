@@ -1,3 +1,8 @@
+# Regression standard deviation
+# Drew Griffith
+
+#hint: Plot channel based on standard deviation
+
 declare upper;
 
 input price = close;

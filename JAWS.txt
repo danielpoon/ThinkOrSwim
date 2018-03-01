@@ -1,0 +1,43 @@
+# JAWS
+# Drew Griffith
+
+#hint: Mean Reversion Strategy published by PJ Sutherland: https://blog.sutherlandresearch.com/index.php/2017/05/26/a-simple-mean-reversion-strategy/
+
+declare lower;
+input ma1 = 2;
+input ma2 = 5;
+input pct_diff = 5.0;
+input price = close;
+
+def movavg1 = expAverage(length = ma1, data = price);
+#movavg1.SetLineWeight(3);
+#movavg1.SetDefaultColor(Color.CYAN);
+def movavg2 = expAverage(length = ma2, data = price);
+#movavg2.SetLineWeight(3);
+#movavg2.SetDefaultColor(Color.MAGENTA);
+
+plot pctdiff = (AbsValue(movavg1 - movavg2) / ((movavg1 + movavg2) / 2)) * 100;
+
+plot extSE = if close > movavg1 and close > movavg2 and pctdiff >= pct_diff then pctdiff else Double.NaN;
+extSE.SetLineWeight(3);
+extSE.SetDefaultColor(Color.ORANGE);
+extSE.SetPaintingStrategy(PaintingStrategy.POINTS);
+
+plot extLE = if close < movavg1 and close < movavg2 and pctdiff >= pct_diff then pctdiff else Double.NaN;
+extLE.SetLineWeight(3);
+extLE.SetDefaultColor(Color.YELLOW);
+extLE.SetPaintingStrategy(PaintingStrategy.POINTS);
+
+plot ext = pct_diff;
+ext.SetLineWeight(1);
+ext.SetDefaultColor(Color.GRAY);
+ext.SetPaintingStrategy(PaintingStrategy.LINE);
+
+plot LE = if movavg1 crosses above movavg2 and pctdiff < 2 then pctdiff else double.NaN;
+LE.AssignValueColor(Color.GREEN);
+LE.SetPaintingStrategy(PaintingStrategy.POINTS);
+LE.SetLineWeight(5);
+plot LX = if movavg1 crosses below movavg2 then pctdiff else double.NaN;;
+LX.AssignValueColor(Color.RED);
+LX.SetPaintingStrategy(PaintingStrategy.POINTS);
+LX.SetLineWeight(5);

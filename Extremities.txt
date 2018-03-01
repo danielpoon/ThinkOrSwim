@@ -1,3 +1,8 @@
+# Extremities
+# Drew Griffith
+
+#hint: Determine the percentage between the closing price and the high/low. Helps to determine price target for mean reversion and filter out stocks in scans based on stock volatility.
+
 declare lower;
 
 input length = 1;

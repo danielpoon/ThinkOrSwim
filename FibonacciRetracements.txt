@@ -1,0 +1,42 @@
+# Fibonacci Retracements
+# Drew Griffith
+
+#hint: Automatically determine fib lines
+
+input periods = 90;
+input displace = -1;
+input aggregationperiod = aggregationperiod.day;
+input showonlylastperiod = yes;
+
+plot fr100;
+if showonlylastperiod and !isnan(high(period = aggregationperiod)[-1]) { fr100 = double.nan;
+} else { fr100 = highest(high(period = aggregationperiod)[-displace], periods);
+}
+
+plot fr0;
+if showonlylastperiod and !isnan(low(period = aggregationperiod)[-1]) { fr0 = double.nan;
+} else { fr0 = lowest(low(period = aggregationperiod)[-displace], periods);
+}
+
+plot fr38 = fr100 - (fr100 - fr0) * 0.382;
+plot fr50 = fr100 - (fr100 - fr0) * 0.500;
+plot fr62 = fr100 - (fr100 - fr0) * 0.618;
+plot fr79 = fr100 - (fr100 - fr0) * 0.786;
+plot fr24 = fr100 - (fr100 - fr0) * 0.236;
+
+fr0.setdefaultcolor(createcolor(255, 255, 255));
+fr0.setpaintingstrategy(paintingstrategy.dashes);
+fr24.setdefaultcolor(createcolor(255, 255, 255));
+fr24.setpaintingstrategy(paintingstrategy.dashes);
+fr38.setdefaultcolor(createcolor(255, 255, 255));
+fr38.setpaintingstrategy(paintingstrategy.dashes);
+fr50.setdefaultcolor(createcolor(255, 255, 255));
+fr50.setpaintingstrategy(paintingstrategy.dashes);
+fr62.setdefaultcolor(createcolor(255, 255, 255));
+fr62.setpaintingstrategy(paintingstrategy.dashes);
+fr79.setdefaultcolor(createcolor(255, 255, 255));
+fr79.setpaintingstrategy(paintingstrategy.dashes);
+fr100.setdefaultcolor(createcolor(255, 255, 255));
+fr100.setpaintingstrategy(paintingstrategy.dashes);
+
+##############################################

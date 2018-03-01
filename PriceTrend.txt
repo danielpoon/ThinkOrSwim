@@ -1,0 +1,47 @@
+# Price Trend
+# Drew Griffith
+
+#hint: Color candlesticks based on price movement. New highs are green; New lows are red; Sideways trading are grey.
+
+declare upper;
+
+input trail = 1;
+input displace = 1;
+input aggregationperiod = aggregationperiod.day;
+
+def new_high = close > highest(high(period = aggregationperiod), trail)[displace];
+def new_low = close < lowest(low(period = aggregationperiod), trail)[displace];
+
+def greenprice = if new_high then yes else if new_low then no else new_high[1];
+def redprice = if new_low then yes else if new_high then no else new_low[1];
+
+plot bullish = greenprice;
+plot neutral = !greenprice and !redprice;
+plot bearish = redprice;
+
+plot rating =
+if greenprice then 1
+else if redprice then .5
+else 0;
+
+def paintbars = yes;
+
+bullish.setdefaultcolor(color.uptick);
+bullish.setpaintingstrategy(paintingstrategy.boolean_points);
+bullish.setlineweight(3);
+bullish.hide();
+neutral.setdefaultcolor(color.gray);
+neutral.setpaintingstrategy(paintingstrategy.boolean_points);
+neutral.setlineweight(3);
+neutral.hide();
+bearish.setdefaultcolor(color.downtick);
+bearish.setpaintingstrategy(paintingstrategy.boolean_points);
+bearish.setlineweight(3);
+bearish.hide();
+rating.hide();
+rating.hidebubble();
+
+defineglobalcolor("bullish", color.uptick);
+defineglobalcolor("neutral", color.gray);
+defineglobalcolor("bearish", color.downtick);
+assignpricecolor(if !paintbars then color.current else if greenprice then globalcolor("bullish") else if redprice then globalcolor("bearish") else globalcolor("neutral"));

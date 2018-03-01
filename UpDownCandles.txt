@@ -1,14 +1,18 @@
+# Up / Down Candlesticks
+# Drew Griffith
+
+#hint: Determine the count/percentage of candle sticks finishing up or down compared to the last n candlesticks
+
 declare lower;
- 
+
 # Daily settings
 input candle_length = 10;
-input extreme_indx = 8; # Number of up and down candle in a strong trend
+input extreme_indx = 9; # Number of up and down candle in a strong trend
 
-# Global definitions 
 def h = high;
 def l = low;
 def c = close;
- 
+
 plot Up = Sum(close > open, candle_length);
 Up.SetDefaultColor(Color.Green);
 plot Dn = Sum(close < open, candle_length);
@@ -23,7 +27,7 @@ plot posDiv = DLow;
 posDiv.SetPaintingStrategy(PaintingStrategy.POINTS);
 posDiv.SetLineWeight(2);
 posDiv.SetDefaultColor(Color.YELLOW);
- 
+
 def DHigh = if Up >= extreme_indx then Up
                else Double.NaN;
 
