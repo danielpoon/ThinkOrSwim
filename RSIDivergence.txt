@@ -1,7 +1,7 @@
 # RSI Divergence
 # Drew Griffith
 
-#hint: Signal if the RSI is divergent with price.
+#hint: Signal if the RSI is in a divergence.
 
 declare lower;
 
@@ -25,30 +25,30 @@ def cond1 = CompoundValue(1, if IsNaN(c)
 def NetChgAvg = WildersAverage(c - c[1], nRSI);
 def TotChgAvg = WildersAverage(AbsValue(c - c[1]), nRSI);
 def ChgRatio = if TotChgAvg != 0 then NetChgAvg / TotChgAvg else 0;
-plot RSI = round(50 * (ChgRatio + 1),0);
-RSI.SetLineWeight(3);
-RSI.AssignValueColor(if RSI < OverSold then Color.Green else if  RSI > OverBought then Color.Red else Color.Gray);
+plot RSI = Round(50 * (ChgRatio + 1), 2);
+RSI.SetLineWeight(2);
+RSI.AssignValueColor(if RSI < OverSold then Color.GREEN else if  RSI > OverBought then Color.RED else Color.GRAY);
 
 plot RSItrend;
 switch (TrendLine) {
 case EMA:
-   RSItrend = ExpAverage(RSI, nTrend);
+    RSItrend = Round(ExpAverage(RSI, nTrend), 2);
 case SMA:
-   RSItrend = Average(RSI, nTrend);
+    RSItrend = Round(Average(RSI, nTrend), 2);
 case LRL:
-   RSItrend = InertiaAll(RSI, nTrend);
+    RSItrend = Round(InertiaAll(RSI, nTrend), 2);
 case WMA:
-   RSItrend = WMA(RSI, nTrend);
+    RSItrend = Round(WMA(RSI, nTrend), 2);
 }
 RSItrend.SetLineWeight(1);
 RSItrend.SetDefaultColor(Color.RED);
 
 plot RSIOB = OverBought;
 RSIOB.SetLineWeight(1);
-RSIOB.SetDefaultColor(Color.Blue);
+RSIOB.SetDefaultColor(Color.DARK_GRAY);
 plot RSIOS = OverSold;
 RSIOS.SetLineWeight(1);
-RSIOS.SetDefaultColor(Color.Blue);
+RSIOS.SetDefaultColor(Color.DARK_GRAY);
 
 def lowestLow = if RSI > OverSold
                then l
@@ -96,8 +96,8 @@ DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
 DHigh.SetLineWeight(3);
 DHigh.SetDefaultColor(Color.YELLOW);
 
-def AlertCond1 = DHigh == OverBought;
-def AlertCond2 = DLow == OverSold;
+#def AlertCond1 = DHigh == OverBought;
+#def AlertCond2 = DLow == OverSold;
 
 #Alert(AlertCond1, "Divergent High", Alert.Bar, Sound.Bell);
 #Alert(AlertCond1, "Divergent Low", Alert.Bar, Sound.Bell);
