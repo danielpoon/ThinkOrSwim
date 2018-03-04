@@ -1,0 +1,9 @@
+# PercentRank
+# Drew Griffith
+
+# hint: https://www.amibroker.com/guide/afl/percentrank.html
+
+input Data = close;
+input Periods = 100;
+def return = 100 * (fold i = 1 to Periods with count do count + (if Data > getValue(Data, i) then 1 else 0)) / Periods;
+plot PercentRankPlot = return;

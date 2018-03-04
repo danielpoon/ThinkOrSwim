@@ -3,7 +3,7 @@
 
 #hint: This study is a replication of StockCharts SCTR. http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:sctr
 
-declare lower;
+declare upper;
 
 input SMA200 = 200;
 input ROC125 = 125;
@@ -13,8 +13,7 @@ input PPO_HIST = 3;
 input RSI = 14;
 input LT_WEIGHT = .30;
 input MD_WEIGHT = .15;
-input SH_WEIGHT = .05;
-input SR_LENGTH = 40;
+input SH_WEIGHT = .05; 
 
 #Long-Term Indicators (weighting)
 #  * Percent above/below 200-day SMA (30%)
@@ -60,32 +59,17 @@ def TR = Round(LT + MD + SH, NUMBEROFDIGITS = 1);
 
 plot SCTR = if isNaN(TR) OR isInfinite(TR) then 0 else TR;
 
-plot LONG_SR_HIGH = Round(Highest(SCTR, LENGTH = SR_LENGTH), NUMBEROFDIGITS = 1);
-
-plot LONG_SR_LOW = Round(Lowest(SCTR, LENGTH = SR_LENGTH), NUMBEROFDIGITS = 1);
-
 plot ZERO = 0;
 
 SCTR.AssignValueColor(if SCTR >= ZERO then Color.GREEN else Color.RED);
 SCTR.SetLineWeight(1);
 SCTR.SetStyle(Curve.POINTS);
+SCTR.Hide();
 
 ZERO.AssignValueColor(if SCTR >= ZERO then Color.GREEN else Color.RED);
 ZERO.SetLineWeight(3);
 ZERO.SetStyle(Curve.POINTS);
 ZERO.Hide();
 
-LONG_SR_HIGH.SetDefaultColor(Color.CYAN);
-#LONG_SR_HIGH.SetStyle(Curve.SHORT_DASH);
-LONG_SR_HIGH.SetLineWeight(1);
-LONG_SR_HIGH.Hide();
-
-LONG_SR_LOW.SetDefaultColor(Color.CYAN);
-#LONG_SR_LOW.SetStyle(Curve.SHORT_DASH);
-LONG_SR_LOW.SetLineWeight(1);
-LONG_SR_LOW.Hide();
-
 # Add label
 AddLabel(SCTR, "SCTR = " + SCTR, if SCTR >= ZERO then Color.GREEN else if SCTR < ZERO then Color.RED else Color.GRAY);
-
-### $$$ ###

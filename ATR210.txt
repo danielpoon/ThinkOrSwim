@@ -41,11 +41,12 @@ LowerInnerBand.SetLineWeight(1);
 LowerInnerBand.SetStyle(Curve.SHORT_DASH);
 
 # Long entry signals (only)
-def rsi = RSI(length = 2) < 5;
+def rsi = RSI(length = 2);
+
 ## high/close must be greater than n%
 def ext = ((high / close - 1) * 100) >= extremities;
 
-plot LE = price < LowerOuterBand and rsi and ext;
+plot LE = price < LowerOuterBand and rsi < 5 and ext;
 LE.AssignValueColor(Color.GREEN);
 LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 LE.SetLineWeight(5);
