@@ -1,11 +1,10 @@
 # ATR210
 # Drew Griffith
 
-#hint: Mean reversion strategy. LE when price closes outside of the ATR(10) * -2 and RSI2 < 5.
+#hint: Mean reversion.
 
 declare upper;
 
-input extremities = 2.0; #percentage
 input innerValue = 1.5;
 input outerValue = 2.0;
 input length = 10;
@@ -40,19 +39,6 @@ LowerInnerBand.AssignValueColor(Color.GREEN);
 LowerInnerBand.SetLineWeight(1);
 LowerInnerBand.SetStyle(Curve.SHORT_DASH);
 
-# Long entry signals (only)
-def rsi = RSI(length = 2);
-
-## high/close must be greater than n%
-def ext = ((high / close - 1) * 100) >= extremities;
-
-plot LE = price < LowerOuterBand and rsi < 5 and ext;
-LE.AssignValueColor(Color.GREEN);
-LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
-LE.SetLineWeight(5);
-
 # Turn AddClouds off by putting a #-sign at the first position of the lines
 AddCloud(UpperOuterBand, UpperInnerBand, color.red);
 AddCloud(LowerInnerBand, LowerOuterBand, color.green);
-
-#Alert(LE, "ATR210", Alert.Bar, Sound.Bell);

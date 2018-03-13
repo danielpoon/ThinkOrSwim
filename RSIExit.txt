@@ -3,14 +3,10 @@
 
 #hint: RSI2 is a common way to determine exit if you incorporate it into your buy signal for a mean reversion strategy. Even on a loss, the RSI indicates a lower high sell point. I see this as selling at a high for a stop loss.
 
-# 70 for long / 30 for short for Daily chart
-# 80 for long / 20 for short for 30min chart
-# 90 for long / 10 for short for 15min chart
-
-input side = {DEFAULT LONG, SHORT};
-input target = 70;
-input rsi_length = 2;
+input RSItarget = 50;
 input price = close;
+input rsi_length = 2;
+input side = {DEFAULT LONG, SHORT};
 
 # rsi
 def netchgavg = wildersaverage(price - price[1], rsi_length);
@@ -21,9 +17,9 @@ def rsi = round(50 * (chgratio + 1), numberofdigits = 0);
 def lmt;
 switch (side) {
 case long:
-    lmt = rsi >= target;
+    lmt = rsi >= RSItarget;
 case short:
-    lmt = rsi <= target;
+    lmt = rsi <= RSItarget;
 }
 
 plot exit = lmt;

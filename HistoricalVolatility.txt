@@ -1,7 +1,0 @@
-# Historical Volatility
-# Drew Griffith
-
-# hint: Historical Volatility
-
-input lenPeriod = 100;
-plot HV = 100 * StDev(log(Close/Close[1]),lenPeriod) * sqrt(252);

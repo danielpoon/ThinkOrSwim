@@ -6,13 +6,37 @@
 declare upper;
 input sym = "SPY";
 input averageType = AverageType.EXPONENTIAL;
+input basis = {default Annual, Monthly, Weekly, Daily};
 input ma_length = 300;
-input hv_length = 100;
+input length = 100;
 
 def cl = close(sym);
 
-# Historical Volatility
-def hv = 100 * StDev(log(cl/cl[1]),hv_length) * sqrt(252);
+def ap = getAggregationPeriod();
+
+assert(ap >= AggregationPeriod.MIN, "Study can only be calculated for time-aggregated charts: " + ap);
+
+def barsPerDay = (regularTradingEnd(getYyyyMmDd()) - regularTradingStart(getYyyyMmDd())) / ap;
+def barsPerYear =
+    if ap > AggregationPeriod.WEEK then 12
+    else if ap == AggregationPeriod.WEEK then 52
+    else if ap >= AggregationPeriod.DAY then 252 * AggregationPeriod.DAY / ap
+    else 252 * barsPerDay;
+
+def basisCoeff;
+switch (basis) {
+case Annual:
+    basisCoeff = 1;
+case Monthly:
+    basisCoeff = 12;
+case Weekly:
+    basisCoeff = 52;
+case Daily:
+    basisCoeff = 252;
+}
+
+def clLog = log(cl / cl[1]);
+def HV = 100 * stdev(clLog, length) * Sqrt(barsPerYear / basisCoeff * length / (length - 1));
 
 # Moving Average
 def long_trend = MovingAverage(averageType, cl, ma_length);
