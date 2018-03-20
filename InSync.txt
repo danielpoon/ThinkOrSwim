@@ -5,13 +5,13 @@
 
 declare upper;
 
-input extremities = 1.5; #1.0 intraday
+input extremities = 1.5; #0.5-1.0 intraday
 input innerValue = 1.5;
 input outerValue = 2.0;
-input bb_length = 20; #12 intraday
+input bb_length = 20;
 def rsi2_length = 2;
 def rsi2_oversold = 5;
-input mfi_length = 14; #12 intraday
+input mfi_length = 14;
 def length = 10;
 def price = close;
 def averageType = AverageType.EXPONENTIAL;
@@ -38,3 +38,9 @@ plot LE = ext
 LE.AssignValueColor(if LE and price < LowerOuterBand then Color.GREEN else if LE and price < LowerInnerBand then Color.CYAN else Color.GRAY);
 LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 LE.SetLineWeight(5);
+
+input audibleAlerts = no;
+Alert(audibleAlerts and LE, GetSymbol() + " at exhaustion.", Alert.Bar, Sound.Bell);
+
+## Needed for Watchlist box painting
+#AssignBackgroundColor(if LE then Color.GREEN else Color.GRAY);
