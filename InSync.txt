@@ -40,7 +40,7 @@ LE.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 LE.SetLineWeight(5);
 
 input audibleAlerts = no;
-Alert(audibleAlerts and LE, GetSymbol() + " at exhaustion.", Alert.Bar, Sound.Bell);
+Alert(audibleAlerts and LE, GetSymbol() + " at exhaustion.", Alert.Bar, Sound.Ding);
 
 ## Needed for Watchlist box painting
 #AssignBackgroundColor(if LE then Color.GREEN else Color.GRAY);
