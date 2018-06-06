@@ -1,49 +1,40 @@
-# InSync
+# insync
 # Drew Griffith
 
-#hint: Mean Reversion ENTRY Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremeties input. This strategy looks for long term trending stocks above EMA300, SMA200 or linearregressionslope; Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is the high price of the day of entry. Ideal hold times are less than 5 days. On day 5, the position moves to breakeven. Optimized for use on daily charts.
+#hint: Mean Reversion ENTRY Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremities input. This strategy looks for long term trending stocks above EMA300, SMA200; Also, there are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is the high price of the day of entry. Ideal hold times are less than 5 days. On day 5, the position moves to breakeven. Optimized for use on daily charts.
 
 declare lower;
-input smooth = 1;
+input periods = 1;
+input oversold = 30;
+input overbought = 380;
 
-# Study Definitions
-def bbCalc = BollingerPercentB();
+# study definitions
+def bbcalc = BollingerPercentB();
 def rsi = RSI(length = 2);
 def eom = EaseOfMovement();
 def mf = MoneyFlowIndex();
 def stoch = StochasticFull("k period" = 14);
 def bomp = BalanceOfMarketPower();
 
-# Indicator Scoring
-def bb = if bbCalc > 95 then 16.667 else if bbCalc < 5 then -16.667 else 0;
-def rsiw = if rsi > 95 then 16.667 else if rsi < 5 then -16.667 else 0;
-def emv = if eom > 0 then 16.667 else if eom < 0 then -16.667 else 0;
-def mfi = if mf > 80 then 16.667 else if mf < 35 then -16.667 else 0;
-def sto = if stoch > 80 then 16.667 else if stoch < 20 then -16.667 else 0;
-def bop = if bomp > 0 then 16.667 else if bomp < 0 then -16.667 else 0;
+# point sum
+def sum = Round(bbcalc + rsi + eom + mf + stoch + bomp, numberofdigits = -1);
 
-# Point Sum
-def sum = round(bb + rsiW + bop + emv + mfi + sto, numberOfDigits = -1);
-
-# Plots
-plot inSync = sum;
-plot zero = 0;
-plot pos = 80;
-plot neg = -80;
-inSync.AssignValueColor(if sum >= 80 then Color.RED else if sum <= -80 then Color.GREEN else Color.GRAY);
-inSync.SetLineWeight(3);
-zero.AssignValueColor(Color.LIGHT_GRAY);
+# plots
+plot insync = sum;
+plot pos = overbought;
+plot neg = oversold;
+insync.AssignValueColor(if sum >= pos then Color.RED else if sum <= neg then Color.GREEN else Color.GRAY);
+insync.SetLineWeight(3);
 pos.AssignValueColor(Color.GREEN);
 neg.AssignValueColor(Color.RED);
-zero.HideTitle();
 pos.HideTitle();
 neg.HideTitle();
 
-plot signal = if sum == 100 then 100 else if sum == -100 then -100 else Double.NaN;
-signal.SetPaintingStrategy(paintingStrategy = PaintingStrategy.POINTS);
+plot signal = if sum >= pos then sum else if sum <= neg then sum else Double.NaN;
+signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(4);
 signal.AssignValueColor(Color.YELLOW);
 
-# Alerts
-#Alert((sum == -100), "inSync LE", "alert type" = Alert.BAR, sound = Sound.Ding);
-#Alert((sum == 100), "inSync SE", "alert type" = Alert.BAR, sound = Sound.Ding);
+# alerts
+#alert((sum == -100), "insync le", "alert type" = alert.bar, sound = sound.ding);
+#alert((sum == 100), "insync se", "alert type" = alert.bar, sound = sound.ding);
