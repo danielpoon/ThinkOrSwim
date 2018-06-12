@@ -5,14 +5,14 @@
 
 declare lower;
 input audibleAlerts = NO;
-input paintbars = yes;
+input paintbars = YES;
 input extremities = 2.0; #0.5-1.5 intraday
-input oversold = 0; #~-40 intraday
-input overbought = 520; #~540 intraday
+input oversold = 20; #~-50 intraday
+input overbought = 500; #~550 intraday
 input bbp_length = 20;
 input mfi_length = 14;
-input rsi2_length = 2;
-input sto_length = 14;
+def rsi2_length = 2;
+def rsi14_length = 14;
 input bmp_length = 14;
 input atr_outer = 2.0;
 input atr_length = 12;
@@ -21,11 +21,11 @@ def trueRangeAverageType = AverageType.EXPONENTIAL;
 def price = close;
 
 # study definitions
-def rsi = RSI(length = rsi2_length);
+def rsi2 = RSI(length = rsi2_length);
+def rsi14 = RSI(length = rsi14_length);
 def mfi = MoneyFlowIndex(length = mfi_length);
-def sto = StochasticFull("k period" = sto_length);
 def bom = BalanceOfMarketPower(length = bmp_length) * 100;
-def bbp = BollingerPercentB(length = bbp_length);
+def bbp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
 
 # ATR Bands
 def OuterValueshift = atr_outer * MovingAverage(trueRangeAverageType, TrueRange(high, close, low), atr_length);
@@ -35,10 +35,10 @@ def LowerOuterBand = average - OuterValueshift;
 def apa = (price - LowerOuterBand) / (UpperOuterBand - LowerOuterBand) * 100;
 
 # plots
-plot insync = Round(bbp + rsi + mfi + sto + bom + apa, numberofdigits = -1);
+plot insync = Round(bbp + rsi2 + rsi14 + mfi + bom + apa, numberofdigits = -1);
 plot pos = overbought;
 plot neg = oversold;
-insync.AssignValueColor(if insync >= pos then Color.RED else if insync <= neg then Color.GREEN else Color.GRAY);
+insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
 insync.SetLineWeight(3);
 pos.AssignValueColor(Color.GREEN);
 neg.AssignValueColor(Color.RED);
@@ -46,15 +46,15 @@ pos.HideTitle();
 neg.HideTitle();
 
 # Large move down / up
-def ext = if close < close[1] and ((high / close - 1) * 100) >= extremities then 1
-else if close > close[1] and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
+def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1
+else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
 
-plot signal = if insync >= pos and ext then insync else if insync <= neg and ext then insync else Double.NaN;
+plot signal = if insync >= overbought and ext then insync else if insync <= oversold and ext then insync else Double.NaN;
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(5);
 signal.AssignValueColor(Color.YELLOW);
 
-assignpricecolor(if paintbars and signal then COLOR.MAGENTA else color.current );
+AssignPriceColor(if paintbars and insync >= overbought and ext then Color.MAGENTA else if paintbars and insync <= oversold and ext then Color.MAGENTA else Color.CURRENT);
 
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
