@@ -1,5 +1,6 @@
 # Hint: Plots consecutive (defined by number)  higher-highs AND lower-lows
 
+input audibleAlerts = NO;
 input price = close;
 input number = 5;#hint number: Arrows are plotted after this number of consecutives are observed
 
@@ -46,5 +47,7 @@ plot y = Sum(lowe, number) >= number and ATR_trig == -1;
 y.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
 y.SetLineWeight(3);
 y.AssignValueColor(if y then Color.GREEN else Color.WHITE);
+
+Alert(audibleAlerts and (x OR y), GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
 #end
