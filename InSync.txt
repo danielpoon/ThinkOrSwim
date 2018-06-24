@@ -6,36 +6,25 @@
 declare lower;
 input audibleAlerts = NO;
 input paintbars = YES;
-#input extremities = 2.0; #0.5-1.5 intraday
-input oversold = 0; #~-50 intraday
-input overbought = 500; #~550 intraday
+input extremities = 2.0;
+input oversold = 50;
+input overbought = 450;
 input bbp_length = 20;
 input mfi_length = 14;
+input sto_length = 14;
 def rsi2_length = 2;
 def rsi14_length = 14;
-input bmp_length = 14;
-input atr_outer = 2.0;
-input atr_length = 10;
-def averageType = AverageType.EXPONENTIAL;
-def trueRangeAverageType = AverageType.EXPONENTIAL;
-def price = close;
 
 # study definitions
 def rsi2 = RSI(length = rsi2_length);
 def rsi14 = RSI(length = rsi14_length);
 def mfi = MoneyFlowIndex(length = mfi_length);
-def bom = BalanceOfMarketPower(length = bmp_length) * 100;
-def bbp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
-
-# ATR Bands
-def OuterValueshift = atr_outer * MovingAverage(trueRangeAverageType, TrueRange(high, close, low), atr_length);
-def average = MovingAverage(averageType, price, atr_length);
-def UpperOuterBand = average + OuterValueshift;
-def LowerOuterBand = average - OuterValueshift;
-def apa = (price - LowerOuterBand) / (UpperOuterBand - LowerOuterBand) * 100;
+def sto = StochasticFull("k period" = sto_length);
+def bp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
+def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 
 # plots
-plot insync = Round(bbp + rsi2 + rsi14 + mfi + bom + apa, numberofdigits = -1);
+plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 plot pos = overbought;
 plot neg = oversold;
 insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
@@ -46,9 +35,9 @@ pos.HideTitle();
 neg.HideTitle();
 
 # Large move down / up
-#def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
+def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
 
-plot signal = if apa < 0 and rsi2 < 10 and mfi < 35 and bbp < 5 then insync else if apa > 100 and rsi2 > 95 and mfi > 80 and bbp > 100 then insync else Double.NaN;
+plot signal = if rsi2 <= 5 and mfi <= 35 and bbp <= 5 and rsi14 <= 30 and sto <= 20 and ext then insync else if rsi2 >= 95 and mfi >= 80 and bbp >= 95 and rsi14 >= 70 and sto >= 80 and ext then insync else Double.NaN;
 #signal.hide();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(5);

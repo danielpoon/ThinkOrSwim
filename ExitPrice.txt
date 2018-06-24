@@ -1,51 +1,46 @@
-# Exit Price
-# Drew Griffith
+# Hint: Plots consecutive (defined by number)  higher-highs AND lower-lows
 
-#hint: Mean Reversion EXIT Strategy. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is normally the high price of the day of entry. Ideal hold times are less than 5 days. If there is no reversal, the position moves to breakeven. Optimized for use on daily charts.
+input audibleAlerts = NO;
+input price = close;
+input number = 5;#hint number: Arrows are plotted after this number of consecutives are observed
 
-declare upper;
+# Bbands
+input bbp_length = 20;
+input bbp_os = 5;
+input bbp_ob = 95;
+def bbp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
+def bbp_trig = if bbp < bbp_os then -1 else if bbp > bbp_ob then 1 else double.nan;
+# end Bbands
 
-input factor = 5;
-def length = 100;
-input innerValue = 1.5;
-input basis = {default annual};
-def atrlength = 10;
-def price = close;
-def averageType = AverageType.EXPONENTIAL;
-def trueRangeAverageType = AverageType.EXPONENTIAL;
+# Higher Hi / Lower Lo
+def hi = high;
+def lo = low;
+def higher = if hi > hi[1] then hi else higher[1];
+def lower = if lo < lo[1] then lo else lower[1];
 
-# ATR Band Calc
-def InnerValueshift = innerValue * MovingAverage(trueRangeAverageType, TrueRange(high, close, low), atrlength);
-def average = MovingAverage(averageType, price, atrlength);
-def LowerInnerBand = average - InnerValueshift;
-def LE = price < LowerInnerBand;
+plot h = higher;
+h.SetLineWeight(1);
+h.SetDefaultColor(Color.CYAN);
+h.Hide();
+plot l = lower;
+l.SetLineWeight(1);
+l.SetDefaultColor(Color.PINK);
+l.Hide();
 
-def ap = GetAggregationPeriod();
-Assert(ap >= AggregationPeriod.MIN, "study can only be calculated for time-aggregated charts: " + ap);
-def barsperday = (RegularTradingEnd(GetYYYYMMDD()) - RegularTradingStart(GetYYYYMMDD())) / ap;
-def barsperyear =
-    if ap > AggregationPeriod.WEEK then 12
-    else if ap == AggregationPeriod.WEEK then 52
-    else if ap >= AggregationPeriod.DAY then 252 * AggregationPeriod.DAY / ap
-    else 252 * barsperday;
-def basiscoeff;
-switch (basis) {
-case annual:
-    basiscoeff = 1;
-}
-def cllog = Log(close / close[1]);
-def hv = StDev(cllog, length) * Sqrt(barsperyear / basiscoeff * length / (length - 1)) * factor;
+def hig = higher > higher[1];
+def lowe = lower < lower[1];
+# end Higher Hi / Lower Lo
 
-# Target based on historical vol * factor
-def pricetarget = if LE then (close * (hv / 100)) + close else Double.NaN;
+plot x = Sum(hig, number) >= number and bbp_trig == 1;
+x.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_DOWN);
+x.SetLineWeight(3);
+x.AssignValueColor(if x then Color.RED else Color.WHITE);
 
-def pt = if LE then pricetarget
-    else if LE[1] then pricetarget[1]
-    #else if LE[2] then pricetarget[2]
-    else Double.NaN;
+plot y = Sum(lowe, number) >= number and bbp_trig == -1;
+y.SetPaintingStrategy(PaintingStrategy.BOOLEAN_ARROW_UP);
+y.SetLineWeight(3);
+y.AssignValueColor(if y then Color.GREEN else Color.WHITE);
 
-plot target = pt;
+Alert(audibleAlerts and (x OR y), GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
-target.SetPaintingStrategy(PaintingStrategy.DASHES);
-target.SetLineWeight(1);
-target.AssignValueColor(Color.WHITE);
+#end
