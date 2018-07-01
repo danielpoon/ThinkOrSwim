@@ -28,7 +28,7 @@ plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 plot pos = overbought;
 plot neg = oversold;
 insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
-insync.SetLineWeight(3);
+insync.SetLineWeight(2);
 pos.AssignValueColor(Color.GREEN);
 neg.AssignValueColor(Color.RED);
 pos.HideTitle();
@@ -41,9 +41,9 @@ plot signal = if rsi2 <= 5 and mfi <= 35 and bbp <= 5 and rsi14 <= 30 and sto <=
 #signal.hide();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(5);
-signal.AssignValueColor(Color.YELLOW);
+signal.AssignValueColor(if signal and insync <= neg then color.GREEN else if signal and insync >= pos then color.RED else Color.YELLOW);
 
-AssignPriceColor(if paintbars and signal then Color.YELLOW else if paintbars and signal then Color.YELLOW else Color.CURRENT);
+AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
 
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
