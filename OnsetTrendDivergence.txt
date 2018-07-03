@@ -1,0 +1,42 @@
+# OnsetTrendDivergence
+# Drew Griffith
+
+declare lower;
+input price = close;
+input cutoffLength = 10;
+input roofCutoffLength = 100;
+input k = 0.8;
+
+def filter = reference EhlersRoofingFilter(price, cutoffLength, roofCutoffLength).RoofingFilter;
+def peak = Max(AbsValue(filter), peak[1] * 0.991);
+plot NormRoofingFilter = filter / peak;
+def Quotient = (NormRoofingFilter + k) / (k * NormRoofingFilter + 1);
+#def ZeroLine = 0;
+
+# check for divergence
+input shortNtrend = 5;
+input longNtrend = 60;
+
+# bearish divergence
+def hh = Highest(high, longNtrend);
+def strat_hh = Round(Highest(NormRoofingFilter, longNtrend));  #round to nearest whole number
+def strat_nearesthh = Round(Highest(NormRoofingFilter, shortNtrend));  #round to nearest whole number
+plot DHigh = if Highest(high, shortNtrend) == hh and strat_nearesthh < strat_hh[1] and NormRoofingFilter < NormRoofingFilter[1] and NormRoofingFilter[2] < NormRoofingFilter[1] then NormRoofingFilter else Double.NaN;
+DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
+DHigh.SetLineWeight(3);
+DHigh.SetDefaultColor(Color.YELLOW);
+
+# bullish divergence
+def ll = Lowest(low, longNtrend);
+def strat_ll = Round(Lowest(NormRoofingFilter, longNtrend));  #round to nearest whole number
+def strat_nearestll = Round(Lowest(NormRoofingFilter, shortNtrend));  #round to nearest whole number
+plot DLow = if Lowest(low, shortNtrend) == ll and strat_nearestll > strat_ll and NormRoofingFilter > NormRoofingFilter[1] and NormRoofingFilter[2] > NormRoofingFilter[1] then NormRoofingFilter else Double.NaN;
+DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
+DLow.SetLineWeight(3);
+DLow.SetDefaultColor(Color.YELLOW);
+
+#alert(DHigh, "Divergent High", alert.bar, sound.bell);
+#alert(DLow, "Divergent Low", alert.bar, sound.bell);
+
+#plot BullDivScan = DLow;
+#plot BearDivScan = DHigh;

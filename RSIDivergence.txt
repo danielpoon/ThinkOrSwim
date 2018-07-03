@@ -1,103 +1,70 @@
 # RSI Divergence
 # Drew Griffith
 
-#hint: Signal if the RSI is in a divergence.
+#hint: signal if the rsi is in a divergence.
 
 declare lower;
 
-input nRSI = 2;
-input OverBought = 95;
-input OverSold = 5;
-input MidLine = 50;
-input nTrend = 100;
-input TrendLine = {EMA, SMA, default LRL, WMA};
+input nrsi = 14;
+input overbought = 70;
+input oversold = 30;
+input ntrend = 60;
+input trendline = {EMA, SMA, default LRL, WMA};
 
-# Global definitions
+# global definitions
 def h = high;
 def l = low;
 def c = close;
 
-def cond1 = CompoundValue(1, if IsNaN(c)
-                            then cond1[1]
-                            else c, c);
+# rsi wilder with divergence markers
+def netchgavg = WildersAverage(c - c[1], nrsi);
+def totchgavg = WildersAverage(AbsValue(c - c[1]), nrsi);
+def chgratio = if totchgavg != 0 then netchgavg / totchgavg else 0;
+plot rsi = Round(50 * (chgratio + 1), 0);
+rsi.SetLineWeight(2);
+rsi.AssignValueColor(if rsi < oversold then Color.GREEN else if  rsi > overbought then Color.RED else Color.GRAY);
 
-# RSI Wilder with Divergence Markers
-def NetChgAvg = WildersAverage(c - c[1], nRSI);
-def TotChgAvg = WildersAverage(AbsValue(c - c[1]), nRSI);
-def ChgRatio = if TotChgAvg != 0 then NetChgAvg / TotChgAvg else 0;
-plot RSI = Round(50 * (ChgRatio + 1), 2);
-RSI.SetLineWeight(2);
-RSI.AssignValueColor(if RSI < OverSold then Color.GREEN else if  RSI > OverBought then Color.RED else Color.GRAY);
-
-plot RSItrend;
-switch (TrendLine) {
+plot rsitrend;
+switch (trendline) {
 case EMA:
-    RSItrend = Round(ExpAverage(RSI, nTrend), 2);
+    rsitrend = Round(ExpAverage(rsi, ntrend), 2);
 case SMA:
-    RSItrend = Round(Average(RSI, nTrend), 2);
+    rsitrend = Round(Average(rsi, ntrend), 2);
 case LRL:
-    RSItrend = Round(InertiaAll(RSI, nTrend), 2);
+    rsitrend = Round(InertiaAll(rsi, ntrend), 2);
 case WMA:
-    RSItrend = Round(WMA(RSI, nTrend), 2);
+    rsitrend = Round(WMA(rsi, ntrend), 2);
 }
-RSItrend.SetLineWeight(1);
-RSItrend.SetDefaultColor(Color.RED);
+rsitrend.SetLineWeight(2);
+rsitrend.SetDefaultColor(Color.RED);
 
-plot RSIOB = OverBought;
-RSIOB.SetLineWeight(1);
-RSIOB.SetDefaultColor(Color.DARK_GRAY);
-plot RSIOS = OverSold;
-RSIOS.SetLineWeight(1);
-RSIOS.SetDefaultColor(Color.DARK_GRAY);
+plot rsiob = overbought;
+rsiob.SetLineWeight(1);
+rsiob.SetDefaultColor(Color.DARK_GRAY);
+plot rsios = oversold;
+rsios.SetLineWeight(1);
+rsios.SetDefaultColor(Color.DARK_GRAY);
 
-def lowestLow = if RSI > OverSold
-               then l
-               else if RSI < OverSold and
-                       l < lowestLow[1]
-               then l
-               else lowestLow[1];
-def lowestRSI = if RSI > MidLine
-               then RSI
-               else if RSI < MidLine and
-                       RSI < lowestRSI[1]
-               then RSI
-               else lowestRSI[1];
-def divergentLow = if RSI < OverSold and
-                  l <= lowestLow[1] and
-                  RSI > lowestRSI[1]
-                  then OverSold
-                  else Double.NaN;
-plot DLow = divergentLow;
-DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
-DLow.SetLineWeight(3);
-DLow.SetDefaultColor(Color.YELLOW);
-
-def highestHigh = if RSI < OverBought
-                 then h
-                 else if RSI > OverBought and
-                         h > highestHigh[1]
-                 then h
-                 else highestHigh[1];
-def highestRSI = if RSI < MidLine
-                then RSI
-                else if RSI > MidLine and
-                        RSI > highestRSI[1]
-                then RSI
-                else highestRSI[1];
-def divergentHigh = if RSI > OverBought and
-                      h >= highestHigh[1] and
-                      RSI < highestRSI[1] and
-                      cond1 within 3 bars
-                   then OverBought
-                   else Double.NaN;
-
-plot DHigh = divergentHigh;
+# bearish divergence
+def hh = Highest(h, ntrend);
+def ch = Highest(c, ntrend);
+def strat_hh = round(Highest(rsi, ntrend));  #round to nearest whole number
+plot DHigh = if h == hh and c == ch and rsi < strat_hh and rsi > overbought then rsi else Double.NaN;
 DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
 DHigh.SetLineWeight(3);
 DHigh.SetDefaultColor(Color.YELLOW);
 
-#def AlertCond1 = DHigh == OverBought;
-#def AlertCond2 = DLow == OverSold;
+# bullish divergence
+def ll = lowest(l, ntrend);
+def cl = lowest(c, ntrend);
+def strat_ll = round(lowest(rsi, ntrend));  #round to nearest whole number
+plot DLow = if l == ll and c == cl and rsi > strat_ll and rsi < oversold then rsi else Double.NaN;
+DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
+DLow.SetLineWeight(3);
+DLow.SetDefaultColor(Color.YELLOW);'
 
-#Alert(AlertCond1, "Divergent High", Alert.Bar, Sound.Bell);
-#Alert(AlertCond1, "Divergent Low", Alert.Bar, Sound.Bell);
+#alert(DHigh, "divergent high", alert.bar, sound.bell);
+#alert(DLow, "divergent low", alert.bar, sound.bell);
+
+#plot BullDivScan = DLow;
+#plot BearDivScan = DHigh;
