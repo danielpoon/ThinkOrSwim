@@ -50,7 +50,7 @@ input ntrend = 14;
 def ll = lowest(low, ntrend);
 def cl = lowest(close, ntrend);
 def strat_ll = round(lowest(insync, ntrend));  #round to nearest whole number
-plot DLow = if low == ll and close == cl and insync > strat_ll and strat_ll <= oversold then insync else Double.NaN;
+plot DLow = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= oversold then insync else Double.NaN;
 DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
 DLow.SetLineWeight(1);
 DLow.SetDefaultColor(Color.YELLOW);
@@ -58,7 +58,7 @@ DLow.SetDefaultColor(Color.YELLOW);
 def hh = highest(high, ntrend);
 def ch = highest(close, ntrend);
 def strat_hh = round(highest(insync, ntrend));  #round to nearest whole number
-plot DHigh = if high == hh and close == ch and insync < strat_hh and strat_hh >= overbought then insync else Double.NaN;
+plot DHigh = if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= overbought then insync else Double.NaN;
 DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
 DHigh.SetLineWeight(1);
 DHigh.SetDefaultColor(Color.YELLOW);
