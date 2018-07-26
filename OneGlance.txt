@@ -53,7 +53,7 @@ hl_line.SetPaintingStrategy(PaintingStrategy.LINE_VS_SQUARES);
 hl_line.SetLineWeight(5);
 hl_line.AssignValueColor(if hl_trig == 1 then Color.DOWNTICK else if hl_trig == -1 then Color.UPTICK else Color.GRAY);
 hl_line.HideBubble();
-AddLabel(showlabels, "HiLo(" + hl_line + ") = " + Round(hl_sum, 1), if hl_trig == 1 then Color.DOWNTICK else if hl_trig == -1 then Color.UPTICK else Color.GRAY);
+AddLabel(showlabels, "HiLo(" + number + ") = " + Round(hl_sum, 1), if hl_trig == 1 then Color.DOWNTICK else if hl_trig == -1 then Color.UPTICK else Color.GRAY);
 
 # end Higher Hi / Lower Lo
 
