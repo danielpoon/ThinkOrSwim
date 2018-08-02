@@ -4,16 +4,21 @@
 #hint: Mean Reversion ENTRY Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremities input. There are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is the high or open price of the day of entry. Ideal hold times are less than 5 days. Normally, around day 5, the position moves to breakeven. Optimized for use on daily charts.
 
 declare lower;
-input audibleAlerts = NO;
+
+input extremities = 1.0;
+input ext_os = 50;
+input mod_os = 80;
+input mod_ob = 430;
+input ext_ob = 460;
+input ntrend = 14;
 input paintbars = YES;
-input extremities = 2.0;
-input oversold = 50;
-input overbought = 450;
-input bbp_length = 20;
-input mfi_length = 14;
-input sto_length = 14;
+input audibleAlerts = NO;
+def bbp_length = 20;
+def mfi_length = 14;
+def sto_length = 14;
 def rsi2_length = 2;
 def rsi14_length = 14;
+def ma_lenth = 300;
 
 # study definitions
 def rsi2 = RSI(length = rsi2_length);
@@ -22,15 +27,15 @@ def mfi = MoneyFlowIndex(length = mfi_length);
 def sto = StochasticFull("k period" = sto_length);
 def bp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
+def em = ExpAverage(close, ma_lenth);
+def ema = if close >= em then 1 else 0;
 
 # plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
-plot pos = overbought;
-plot neg = oversold;
-insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
+plot pos = if ema == 1 then ext_ob else mod_ob;
+plot neg = if ema == 0 then ext_os else mod_os;
+insync.AssignValueColor(if insync >= pos then Color.RED else if insync <= neg then Color.GREEN else Color.GRAY);
 insync.SetLineWeight(2);
-pos.AssignValueColor(Color.GREEN);
-neg.AssignValueColor(Color.RED);
 pos.HideTitle();
 neg.HideTitle();
 
@@ -44,7 +49,6 @@ signal.SetLineWeight(3);
 signal.AssignValueColor(if insync <= neg then Color.GREEN else if insync >= pos then Color.RED else Color.YELLOW);
 
 # bullish / bearish divergence
-input ntrend = 14;
 def ll = Lowest(low, ntrend);
 def cl = Lowest(close, ntrend);
 def strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
@@ -52,15 +56,22 @@ def hh = Highest(high, ntrend);
 def ch = Highest(close, ntrend);
 def strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 
-plot div = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= oversold and ext then insync
-else if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= overbought and ext then insync else Double.NaN;
+plot div = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= neg and ext then insync
+else if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= pos and ext then insync else Double.NaN;
 div.SetPaintingStrategy(PaintingStrategy.POINTS);
 div.SetLineWeight(1);
-div.SetDefaultColor(Color.YELLOW);
+div.AssignValueColor(Color.YELLOW);
 
-AssignPriceColor(if paintbars and signal then Color.YELLOW else if paintbars and div then Color.YELLOW else Color.CURRENT);
+plot rsi_exit = if rsi2 crosses above 50 and Lowest(insync, length = ntrend) <= neg then insync
+else if rsi2 crosses below 50 and Highest(insync, length = ntrend) >= pos then insync
+else Double.NaN;
+rsi_exit.SetPaintingStrategy(PaintingStrategy.POINTS);
+rsi_exit.SetLineWeight(1);
+rsi_exit.AssignValueColor(Color.WHITE);
+
+AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
 
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
 ## Needed for Watchlist box painting
-#AssignBackgroundColor(if LE then Color.GREEN else Color.GRAY);
+#AssignBackgroundColor(if insync <= pos then Color.GREEN else if insync >= pos then Color.RED else Color.GRAY);
