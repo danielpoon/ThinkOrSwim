@@ -36,6 +36,8 @@ plot pos = if ema == 1 then ext_ob else mod_ob;
 plot neg = if ema == 0 then ext_os else mod_os;
 insync.AssignValueColor(if insync >= pos then Color.RED else if insync <= neg then Color.GREEN else Color.GRAY);
 insync.SetLineWeight(2);
+pos.AssignValueColor(Color.DARK_RED);
+neg.AssignValueColor(Color.DARK_GREEN);
 pos.HideTitle();
 neg.HideTitle();
 
