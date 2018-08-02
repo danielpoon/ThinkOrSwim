@@ -38,30 +38,27 @@ neg.HideTitle();
 def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
 
 plot signal = if ext and insync <= neg then insync else if ext and insync >= pos then insync else Double.NaN;
-#signal.hide();
+signal.HideTitle();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
-signal.SetLineWeight(5);
-signal.AssignValueColor(if insync <= neg then color.GREEN else if insync >= pos then color.RED else Color.YELLOW);
-
-AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
+signal.SetLineWeight(3);
+signal.AssignValueColor(if insync <= neg then Color.GREEN else if insync >= pos then Color.RED else Color.YELLOW);
 
 # bullish / bearish divergence
-input ntrend = 30;
-def ll = lowest(low, ntrend);
-def cl = lowest(close, ntrend);
-def strat_ll = round(lowest(insync, ntrend));  #round to nearest whole number
-plot DLow = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= oversold and ext then insync else Double.NaN;
-DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
-DLow.SetLineWeight(1);
-DLow.SetDefaultColor(Color.YELLOW);
+input ntrend = 14;
+def ll = Lowest(low, ntrend);
+def cl = Lowest(close, ntrend);
+def strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
+def hh = Highest(high, ntrend);
+def ch = Highest(close, ntrend);
+def strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 
-def hh = highest(high, ntrend);
-def ch = highest(close, ntrend);
-def strat_hh = round(highest(insync, ntrend));  #round to nearest whole number
-plot DHigh = if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= overbought and ext then insync else Double.NaN;
-DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
-DHigh.SetLineWeight(1);
-DHigh.SetDefaultColor(Color.YELLOW);
+plot div = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= oversold and ext then insync
+else if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= overbought and ext then insync else Double.NaN;
+div.SetPaintingStrategy(PaintingStrategy.POINTS);
+div.SetLineWeight(1);
+div.SetDefaultColor(Color.YELLOW);
+
+AssignPriceColor(if paintbars and signal then Color.YELLOW else if paintbars and div then Color.YELLOW else Color.CURRENT);
 
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
