@@ -8,7 +8,8 @@ declare lower;
 input nrsi = 14;
 input overbought = 70;
 input oversold = 30;
-input ntrend = 60;
+input ntrend = 30;
+input divsize = 5; # filter to remove smaller divergences if desired
 input trendline = {EMA, SMA, default LRL, WMA};
 
 # global definitions
@@ -31,7 +32,7 @@ case EMA:
 case SMA:
     rsitrend = Round(Average(rsi, ntrend), 2);
 case LRL:
-    rsitrend = Round(InertiaAll(rsi, ntrend), 2);
+    rsitrend = Round(InertiaALL(rsi, ntrend), 2);
 case WMA:
     rsitrend = Round(WMA(rsi, ntrend), 2);
 }
@@ -48,20 +49,19 @@ rsios.SetDefaultColor(Color.DARK_GRAY);
 # bearish divergence
 def hh = Highest(h, ntrend);
 def ch = Highest(c, ntrend);
-def strat_hh = round(Highest(rsi, ntrend));  #round to nearest whole number
-plot DHigh = if h == hh and c == ch and rsi < strat_hh and rsi > overbought then rsi else Double.NaN;
-DHigh.SetPaintingStrategy(PaintingStrategy.POINTS);
-DHigh.SetLineWeight(3);
-DHigh.SetDefaultColor(Color.YELLOW);
+def strat_hh = Round(Highest(rsi, ntrend));  #round to nearest whole number
+def dh = if h == hh and c == ch and rsi < strat_hh and (strat_hh - rsi) >= divsize and rsi > overbought then rsi else Double.NaN;
 
 # bullish divergence
-def ll = lowest(l, ntrend);
-def cl = lowest(c, ntrend);
-def strat_ll = round(lowest(rsi, ntrend));  #round to nearest whole number
-plot DLow = if l == ll and c == cl and rsi > strat_ll and rsi < oversold then rsi else Double.NaN;
-DLow.SetPaintingStrategy(PaintingStrategy.POINTS);
-DLow.SetLineWeight(3);
-DLow.SetDefaultColor(Color.YELLOW);'
+def ll = Lowest(l, ntrend);
+def cl = Lowest(c, ntrend);
+def strat_ll = Round(Lowest(rsi, ntrend));  #round to nearest whole number
+def dl = if l == ll and c == cl and rsi > strat_ll and (rsi - strat_ll) >= divsize and rsi < oversold then rsi else Double.NaN;
+
+plot div = if dl[1] and rsi > rsi[1] then rsi else if dh[1] and rsi < rsi[1] then rsi else Double.NaN;
+div.SetPaintingStrategy(PaintingStrategy.POINTS);
+div.SetLineWeight(3);
+div.SetDefaultColor(Color.YELLOW);
 
 #alert(DHigh, "divergent high", alert.bar, sound.bell);
 #alert(DLow, "divergent low", alert.bar, sound.bell);
