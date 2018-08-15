@@ -40,11 +40,8 @@ rsitrend.SetDefaultColor(Color.RED);
 
 # bearish divergence definitions
 def hh_long = highest(hi, ntrend);
-def hh_medium = highest(hi, (ntrend / 2));
 def hc_long = highest(cl, ntrend);
-def hc_medium = highest(cl, (ntrend / 2));
 def strat_hh_long = Round(highest(diff, ntrend));  #round to nearest whole number
-def strat_hh_medium = Round(highest(diff, (ntrend / 2)));  #round to nearest whole number
 
 # looking for ANY bearish divergence
 plot dh = if hi[1] == hh_long[1] and cl[1] == hc_long[1] and diff[1] < strat_hh_long[1] and diff[1] >= rsi_OB and diff < diff[1] then diff else Double.NaN;
@@ -52,31 +49,16 @@ dh.SetPaintingStrategy(PaintingStrategy.POINTS);
 dh.SetLineWeight(3);
 dh.AssignValueColor(Color.YELLOW);
 
-# looking for only larger developing bearish divergences
-plot dhl = if hi[1] == hh_long[1] and hi[1] == hh_medium[1] and cl[1] == hc_long[1] and cl[1] == hc_medium[1] and strat_hh_long[1] >= rsi_OB and strat_hh_medium[1] >= rsi_OB and strat_hh_long[1] > strat_hh_medium[1] and strat_hh_medium[1] > diff[1] and diff < diff[1] then diff else Double.NaN;
-dhl.SetPaintingStrategy(PaintingStrategy.POINTS);
-dhl.SetLineWeight(5);
-dhl.AssignValueColor(Color.RED);
-
 # bullish divergence definitions
 def ll_long = Lowest(lo, ntrend);
-def ll_medium = Lowest(lo, (ntrend / 2));
 def lc_long = Lowest(cl, ntrend);
-def lc_medium = Lowest(cl, (ntrend / 2));
 def strat_ll_long = Round(Lowest(diff, ntrend));  #round to nearest whole number
-def strat_ll_medium = Round(Lowest(diff, (ntrend / 2)));  #round to nearest whole number
 
 # looking for ANY bullish divergence
 plot dl = if lo[1] == ll_long[1] and cl[1] == lc_long[1] and diff[1] > strat_ll_long[1] and diff[1] <= rsi_OS and diff > diff[1] then diff else Double.NaN;
 dl.SetPaintingStrategy(PaintingStrategy.POINTS);
 dl.SetLineWeight(3);
 dl.AssignValueColor(Color.YELLOW);
-
-# looking for only larger developing bullish divergences
-plot dll = if lo[1] == ll_long[1] and lo[1] == ll_medium[1] and cl[1] == lc_long[1] and cl[1] == lc_medium[1] and strat_ll_long[1] <= rsi_OS and strat_ll_medium[1] <= rsi_OS and strat_ll_long[1] < strat_ll_medium[1] and strat_ll_medium[1] < diff[1] and diff > diff[1] then diff else Double.NaN;
-dll.SetPaintingStrategy(PaintingStrategy.POINTS);
-dll.SetLineWeight(5);
-dll.AssignValueColor(Color.GREEN);
 
 plot diff_high = rsi_OB;
 diff_high.SetDefaultColor(Color.DARK_GRAY);
