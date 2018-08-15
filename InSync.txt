@@ -5,14 +5,16 @@
 
 declare lower;
 
-input extremities = 1.0;
 input ext_os = 50;
-input mod_os = 80;
-input mod_ob = 430;
-input ext_ob = 460;
-input ntrend = 14;
-input paintbars = YES;
-input audibleAlerts = NO;
+input mod_os = 70;
+input mod_ob = 450;
+input ext_ob = 470;
+
+# global definitions
+#def hi = high;
+#def lo = low;
+#def cl = close;
+
 def bbp_length = 20;
 def mfi_length = 14;
 def sto_length = 14;
@@ -30,7 +32,7 @@ def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 def em = ExpAverage(close, ma_lenth);
 def ema = if close >= em then 1 else 0;
 
-# plots
+# main plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 plot pos = if ema == 1 then ext_ob else mod_ob;
 plot neg = if ema == 0 then ext_os else mod_os;
@@ -42,37 +44,18 @@ pos.HideTitle();
 neg.HideTitle();
 
 # Large move down / up
+input extremities = 1.0; # hint: set to daily by default. 1.0 rec for large caps; 2.0 for small camps
 def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
 
 plot signal = if ext and insync <= neg then insync else if ext and insync >= pos then insync else Double.NaN;
 signal.HideTitle();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
-signal.SetLineWeight(3);
+signal.SetLineWeight(5);
 signal.AssignValueColor(if insync <= neg then Color.GREEN else if insync >= pos then Color.RED else Color.YELLOW);
-
-# bullish / bearish divergence
-def ll = Lowest(low, ntrend);
-def cl = Lowest(close, ntrend);
-def strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
-def hh = Highest(high, ntrend);
-def ch = Highest(close, ntrend);
-def strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
-
-plot div = if low == ll and close == cl and (insync - strat_ll) > 10 and strat_ll <= neg and ext then insync
-else if high == hh and close == ch and (strat_hh - insync) > 10 and strat_hh >= pos and ext then insync else Double.NaN;
-div.SetPaintingStrategy(PaintingStrategy.POINTS);
-div.SetLineWeight(1);
-div.AssignValueColor(Color.YELLOW);
-
-plot rsi_exit = if rsi2 crosses above 50 and Lowest(insync, length = ntrend) <= neg then insync
-else if rsi2 crosses below 50 and Highest(insync, length = ntrend) >= pos then insync
-else Double.NaN;
-rsi_exit.SetPaintingStrategy(PaintingStrategy.POINTS);
-rsi_exit.SetLineWeight(1);
-rsi_exit.AssignValueColor(Color.WHITE);
-
+input paintbars = YES;
 AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
 
+input audibleAlerts = NO;
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
 
 ## Needed for Watchlist box painting
