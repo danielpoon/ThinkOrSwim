@@ -41,7 +41,10 @@ rsitrend.SetDefaultColor(Color.RED);
 # bearish divergence definitions
 def hh = highest(hi, ntrend);
 def hc = highest(cl, ntrend);
-def strat_hh = Round(highest(diff, ntrend));  #round to nearest whole number
+plot strat_hh = Round(highest(diff, ntrend));  #round to nearest whole number
+strat_hh.SetDefaultColor(Color.DARK_GRAY);
+strat_hh.SetLineWeight(1);
+strat_hh.HideTitle();
 
 # looking for ANY bearish divergence
 plot dh = if hi[1] == hh[1] and cl[1] == hc[1] and diff[1] < strat_hh[1] and diff[1] >= rsi_OB and diff < diff[1] then diff else Double.NaN;
@@ -52,7 +55,10 @@ dh.AssignValueColor(Color.YELLOW);
 # bullish divergence definitions
 def ll = Lowest(lo, ntrend);
 def lc = Lowest(cl, ntrend);
-def strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
+plot strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
+strat_ll.SetDefaultColor(Color.DARK_GRAY);
+strat_ll.SetLineWeight(1);
+strat_ll.HideTitle();
 
 # looking for ANY bullish divergence
 plot dl = if lo[1] == ll[1] and cl[1] == lc[1] and diff[1] > strat_ll[1] and diff[1] <= rsi_OS and diff > diff[1] then diff else Double.NaN;
@@ -63,11 +69,13 @@ dl.AssignValueColor(Color.YELLOW);
 plot diff_high = rsi_OB;
 diff_high.SetDefaultColor(Color.DARK_GRAY);
 diff_high.SetLineWeight(1);
+diff_high.Hide();
 diff_high.HideTitle();
 
 plot diff_low = rsi_OS;
 diff_low.SetDefaultColor(Color.DARK_GRAY);
 diff_low.SetLineWeight(1);
+diff_low.Hide();
 diff_low.HideTitle();
 
 #alert(DHigh, "divergent high", alert.bar, sound.bell);
