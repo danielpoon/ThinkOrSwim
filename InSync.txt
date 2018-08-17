@@ -11,9 +11,9 @@ input mod_ob = 450;
 input ext_ob = 470;
 
 # global definitions
-#def hi = high;
-#def lo = low;
-#def cl = close;
+def hi = high;
+def lo = low;
+def cl = close;
 
 def bbp_length = 20;
 def mfi_length = 14;
@@ -39,9 +39,11 @@ plot neg = if ema == 0 then ext_os else mod_os;
 insync.AssignValueColor(if insync >= pos then Color.RED else if insync <= neg then Color.GREEN else Color.GRAY);
 insync.SetLineWeight(2);
 pos.AssignValueColor(Color.DARK_RED);
-neg.AssignValueColor(Color.DARK_GREEN);
 pos.HideTitle();
+pos.Hide();
+neg.AssignValueColor(Color.DARK_GREEN);
 neg.HideTitle();
+neg.Hide();
 
 # Large move down / up
 input extremities = 1.0; # hint: set to daily by default. 1.0 rec for large caps; 2.0 for small camps
@@ -50,13 +52,43 @@ def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 e
 plot signal = if ext and insync <= neg then insync else if ext and insync >= pos then insync else Double.NaN;
 signal.HideTitle();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
-signal.SetLineWeight(5);
+signal.SetLineWeight(3);
 signal.AssignValueColor(if insync <= neg then Color.GREEN else if insync >= pos then Color.RED else Color.YELLOW);
-input paintbars = YES;
-AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
+
+input ntrend = 60;
+# bullish / bearish divergence
+def ll = Lowest(low, ntrend);
+def lc = Lowest(close, ntrend);
+plot strat_ll = Round(lowest(insync, ntrend));  #round to nearest whole number
+strat_ll.SetDefaultColor(Color.DARK_GRAY);
+strat_ll.SetLineWeight(1);
+strat_ll.HideTitle();
+def hh = Highest(high, ntrend);
+def hc = Highest(close, ntrend);
+plot strat_hh = Round(highest(insync, ntrend));  #round to nearest whole number
+strat_hh.SetDefaultColor(Color.DARK_GRAY);
+strat_hh.SetLineWeight(1);
+strat_hh.HideTitle();
+
+# looking for ANY bearish divergence
+plot dh = if hi[1] == hh[1] and cl[1] == hc[1] and insync[1] < strat_hh[1] and  strat_hh[1] >= pos and insync < insync[1] then insync else Double.NaN;
+dh.SetPaintingStrategy(PaintingStrategy.POINTS);
+dh.SetLineWeight(1);
+dh.AssignValueColor(Color.YELLOW);
+
+# looking for ANY bullish divergence
+plot dl = if lo[1] == ll[1] and cl[1] == lc[1] and insync[1] > strat_ll[1] and strat_ll[1] <= neg and insync > insync[1] then insync else Double.NaN;
+dl.SetPaintingStrategy(PaintingStrategy.POINTS);
+dl.SetLineWeight(1);
+dl.AssignValueColor(Color.YELLOW);
 
 input audibleAlerts = NO;
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
+Alert(audibleAlerts and dh, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
+Alert(audibleAlerts and dl, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
+
+input paintbars = YES;
+AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
 
 ## Needed for Watchlist box painting
 #AssignBackgroundColor(if insync <= pos then Color.GREEN else if insync >= pos then Color.RED else Color.GRAY);
