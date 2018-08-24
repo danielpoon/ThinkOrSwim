@@ -84,8 +84,8 @@ dl.AssignValueColor(Color.YELLOW);
 
 input audibleAlerts = NO;
 Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
-Alert(audibleAlerts and dh, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
-Alert(audibleAlerts and dl, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
+Alert(audibleAlerts and dh within 2 bars, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
+Alert(audibleAlerts and dl within 2 bars, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
 
 input paintbars = YES;
 AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
