@@ -10,7 +10,6 @@ input ntrend = 60;
 input ma_length = 60;
 input rsi_OB = 20;
 input rsi_OS = -20;
-input trendline = {EMA, SMA, default LRL, WMA};
 
 # global definitions
 def hi = high;
@@ -24,47 +23,19 @@ diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
 diff.AssignValueColor(if diff >= rsi_OB then Color.RED else if diff <= rsi_OS then Color.GREEN else Color.GRAY);
 
-plot rsitrend;
-switch (trendline) {
-case EMA:
-    rsitrend = Round(ExpAverage(diff, ntrend), 2);
-case SMA:
-    rsitrend = Round(Average(diff, ntrend), 2);
-case LRL:
-    rsitrend = Round(InertiaAll(diff, ntrend), 2);
-case WMA:
-    rsitrend = Round(WMA(diff, ntrend), 2);
-}
+plot rsitrend = Round(InertiaAll(diff, ntrend), 2);
 rsitrend.SetLineWeight(2);
 rsitrend.SetDefaultColor(Color.RED);
 
 # bearish divergence definitions
-def hh = highest(hi, ntrend);
-def hc = highest(cl, ntrend);
-plot strat_hh = Round(highest(diff, ntrend));  #round to nearest whole number
+plot strat_hh = Round(Highest(diff, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
-strat_hh.HideTitle();
-
-# looking for ANY bearish divergence
-plot dh = if hi[1] == hh[1] and cl[1] == hc[1] and diff[1] < strat_hh[1] and diff[1] >= rsi_OB and diff < diff[1] then diff else Double.NaN;
-dh.SetPaintingStrategy(PaintingStrategy.POINTS);
-dh.SetLineWeight(3);
-dh.AssignValueColor(Color.YELLOW);
 
 # bullish divergence definitions
-def ll = Lowest(lo, ntrend);
-def lc = Lowest(cl, ntrend);
 plot strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
 strat_ll.SetDefaultColor(Color.DARK_GRAY);
 strat_ll.SetLineWeight(1);
-strat_ll.HideTitle();
-
-# looking for ANY bullish divergence
-plot dl = if lo[1] == ll[1] and cl[1] == lc[1] and diff[1] > strat_ll[1] and diff[1] <= rsi_OS and diff > diff[1] then diff else Double.NaN;
-dl.SetPaintingStrategy(PaintingStrategy.POINTS);
-dl.SetLineWeight(3);
-dl.AssignValueColor(Color.YELLOW);
 
 plot diff_high = rsi_OB;
 diff_high.SetDefaultColor(Color.DARK_GRAY);
@@ -78,5 +49,5 @@ diff_low.SetLineWeight(1);
 diff_low.Hide();
 diff_low.HideTitle();
 
-#alert(DHigh, "divergent high", alert.bar, sound.bell);
-#alert(DLow, "divergent low", alert.bar, sound.bell);
+def div = round(rsitrend-rsitrend[ntrend-1],1);
+AddLabel(yes, "RSI Div: " + div, if div >= 5 then Color.GREEN else if div <= -5 then Color.RED else Color.GRAY);
