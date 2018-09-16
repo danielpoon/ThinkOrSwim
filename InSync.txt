@@ -59,40 +59,54 @@ def peg_signal = if peg_ema == 1 and cl < op and insync <= peg_os then 1 else if
 
 plot signal = if insync <= oversold then insync else if insync >= overbought then insync else if peg_signal == 1 then insync else if peg_signal == -1 then insync else Double.NaN;
 signal.HideTitle();
+signal.HideBubble();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(3);
-signal.AssignValueColor(if insync <= oversold then Color.GREEN else if peg_signal == 1 then Color.GREEN else if peg_signal == -1 then Color.RED else if insync >= overbought then Color.RED else Color.YELLOW);
+signal.AssignValueColor(if insync <= oversold then Color.GREEN else if insync >= overbought then Color.RED else if peg_signal == 1 then Color.GREEN else if peg_signal == -1 then Color.RED else Color.YELLOW);
 
 # bullish / bearish divergences
-input ntrend = 60;
-def ll = Lowest(low, ntrend);
-def lc = Lowest(close, ntrend);
+input ntrend = 10;
+def ll = Lowest(lo, ntrend);
+def lc = Lowest(cl, ntrend);
 plot strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
 strat_ll.SetDefaultColor(Color.DARK_GRAY);
 strat_ll.SetLineWeight(1);
 
-def hh = Highest(high, ntrend);
-def hc = Highest(close, ntrend);
+def hh = Highest(hi, ntrend);
+def hc = Highest(cl, ntrend);
 plot strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
 
 # looking for any bearish divergence
 plot dh = if hi[0] == hh[0] and cl[0] == hc[0] and insync[0] < strat_hh[0] and  strat_hh[0] >= overbought then insync else Double.NaN;
+dh.HideTitle();
 dh.SetPaintingStrategy(PaintingStrategy.POINTS);
 dh.SetLineWeight(1);
 dh.AssignValueColor(Color.YELLOW);
 
 # looking for any bullish divergence
 plot dl = if lo[0] == ll[0] and cl[0] == lc[0] and insync[0] > strat_ll[0] and strat_ll[0] <= oversold then insync else Double.NaN;
+dl.HideTitle();
 dl.SetPaintingStrategy(PaintingStrategy.POINTS);
 dl.SetLineWeight(1);
 dl.AssignValueColor(Color.YELLOW);
 
 input audiblealerts = no;
-Alert(audiblealerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
-Alert(audiblealerts and dh within 2 bars, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
-Alert(audiblealerts and dl within 2 bars, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
+Alert(audiblealerts and insync <= oversold, GetSymbol() + " is oversold at " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and insync >= overbought, GetSymbol() + " is overbought at " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and peg_signal == 1, GetSymbol() + " has a bullish PEG signal at " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and peg_signal == -1, GetSymbol() + " has a bearish PEG signal at " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and dl, GetSymbol() + " has a bullish divergence at " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and dh, GetSymbol() + " has a bearish divergence at " + insync, Alert.BAR, Sound.Ding);
+
+input add_label = YES;
+AddLabel(add_label, if insync <= oversold then "Over-sold at " + insync else "", Color.GREEN);
+AddLabel(add_label, if insync >= overbought then "Over-bought at " + insync else "", Color.RED);
+AddLabel(add_label, if peg_signal == 1 then "Bullish PEG at " + insync else "", Color.GREEN);
+AddLabel(add_label, if peg_signal == -1 then "Bearish PEG at " + insync else "", Color.RED);
+AddLabel(add_label, if dh then "Bearish Divergence at " + insync else "", Color.RED);
+AddLabel(add_label, if dl then "Bearish Divergence at " + insync else "", Color.GREEN);
 
 input paintbars = yes;
 AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);

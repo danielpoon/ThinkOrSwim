@@ -23,10 +23,6 @@ diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
 diff.AssignValueColor(if diff >= rsi_OB then Color.RED else if diff <= rsi_OS then Color.GREEN else Color.GRAY);
 
-plot rsitrend = Round(InertiaAll(diff, ntrend), 2);
-rsitrend.SetLineWeight(2);
-rsitrend.SetDefaultColor(Color.RED);
-
 # bearish divergence definitions
 plot strat_hh = Round(Highest(diff, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
@@ -48,6 +44,10 @@ diff_low.SetDefaultColor(Color.DARK_GRAY);
 diff_low.SetLineWeight(1);
 diff_low.Hide();
 diff_low.HideTitle();
+
+plot rsitrend = Round(InertiaAll(diff, ntrend), 2);
+rsitrend.SetLineWeight(2);
+rsitrend.SetDefaultColor(Color.RED);
 
 def div = round(rsitrend-rsitrend[ntrend-1],1);
 AddLabel(yes, "RSI Div: " + div, if div >= 5 then Color.GREEN else if div <= -5 then Color.RED else Color.GRAY);
