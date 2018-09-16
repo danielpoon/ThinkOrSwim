@@ -1,94 +1,101 @@
-# InSync
-# Drew Griffith
+# insync
+# drew griffith
 
-#hint: Mean Reversion ENTRY Strategy. The default inputs are based on stocks that are more volatile in nature. If you prefer to trade less volatile stocks, you should lower the extremities input. There are additional filters in place to ensure a better entry signal. The strategy is based on closing prices of the day of signal, so buy as close to the EOD as possible. The target is the high or open price of the day of entry. Ideal hold times are less than 5 days. Normally, around day 5, the position moves to breakeven. Optimized for use on daily charts.
+#hint: mean reversion entry strategy. the strategy is based on closing prices of the day of signal, so buy as close to the eod as possible. the target is the high or open price of the day of entry. ideal hold times are less than 5 days. normally, around day 5, the position moves to breakeven. optimized for use on daily charts.
 
 declare lower;
 
 input ext_os = 50;
 input mod_os = 70;
+input peg_os = 220;
+input peg_ob = 300;
 input mod_ob = 450;
 input ext_ob = 470;
 
 # global definitions
 def hi = high;
 def lo = low;
+def op = open;
 def cl = close;
 
+# study definitions
 def bbp_length = 20;
 def mfi_length = 14;
 def sto_length = 14;
 def rsi2_length = 2;
 def rsi14_length = 14;
-def ma_lenth = 300;
 
-# study definitions
+# study calcs
 def rsi2 = RSI(length = rsi2_length);
 def rsi14 = RSI(length = rsi14_length);
 def mfi = MoneyFlowIndex(length = mfi_length);
 def sto = StochasticFull("k period" = sto_length);
-def bp = BollingerPercentB(length = bbp_length, "average type" = "EXPONENTIAL");
+def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
-def em = ExpAverage(close, ma_lenth);
-def ema = if close >= em then 1 else 0;
+
+# determine price trend for insync signals
+def ma_length = 300;
+def em = ExpAverage(cl, ma_length);
+def ema = if cl >= em then 1 else 0;
 
 # main plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
-plot pos = if ema == 1 then ext_ob else mod_ob;
-plot neg = if ema == 0 then ext_os else mod_os;
-insync.AssignValueColor(if insync >= pos then Color.RED else if insync <= neg then Color.GREEN else Color.GRAY);
+plot overbought = if ema == 1 then ext_ob else mod_ob;
+plot oversold = if ema == 0 then ext_os else mod_os;
 insync.SetLineWeight(2);
-pos.AssignValueColor(Color.DARK_RED);
-pos.HideTitle();
-pos.Hide();
-neg.AssignValueColor(Color.DARK_GREEN);
-neg.HideTitle();
-neg.Hide();
+insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
+oversold.AssignValueColor(Color.DARK_GREEN);
+oversold.HideTitle();
+oversold.Hide();
+overbought.AssignValueColor(Color.DARK_RED);
+overbought.HideTitle();
+overbought.Hide();
 
-# Large move down / up
-input extremities = 1.0; # hint: set to daily by default. 1.0 rec for large caps; 2.0 for small camps
-def ext = if close < open and ((high / close - 1) * 100) >= extremities then 1 else if close > open and ((close / low - 1) * 100) >= extremities then 1 else Double.NaN;
+# calcs for power earnings gap signal
+def peg_ma_length = 20;
+def peg_em = ExpAverage(cl, peg_ma_length);
+def peg_ema = if cl >= peg_em then 1 else 0;
+def peg_signal = if peg_ema == 1 and cl < op and insync <= peg_os then 1 else if peg_ema == 0 and cl > op and insync >= peg_ob then -1 else Double.NaN;
 
-plot signal = if ext and insync <= neg then insync else if ext and insync >= pos then insync else Double.NaN;
+plot signal = if insync <= oversold then insync else if insync >= overbought then insync else if peg_signal == 1 then insync else if peg_signal == -1 then insync else Double.NaN;
 signal.HideTitle();
 signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.SetLineWeight(3);
-signal.AssignValueColor(if insync <= neg then Color.GREEN else if insync >= pos then Color.RED else Color.YELLOW);
+signal.AssignValueColor(if insync <= oversold then Color.GREEN else if peg_signal == 1 then Color.GREEN else if peg_signal == -1 then Color.RED else if insync >= overbought then Color.RED else Color.YELLOW);
 
+# bullish / bearish divergences
 input ntrend = 60;
-# bullish / bearish divergence
 def ll = Lowest(low, ntrend);
 def lc = Lowest(close, ntrend);
-plot strat_ll = Round(lowest(insync, ntrend));  #round to nearest whole number
+plot strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
 strat_ll.SetDefaultColor(Color.DARK_GRAY);
 strat_ll.SetLineWeight(1);
-strat_ll.HideTitle();
+
 def hh = Highest(high, ntrend);
 def hc = Highest(close, ntrend);
-plot strat_hh = Round(highest(insync, ntrend));  #round to nearest whole number
+plot strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
-strat_hh.HideTitle();
 
-# looking for ANY bearish divergence
-plot dh = if hi[1] == hh[1] and cl[1] == hc[1] and insync[1] < strat_hh[1] and  strat_hh[1] >= pos and insync < insync[1] then insync else Double.NaN;
+# looking for any bearish divergence
+plot dh = if hi[0] == hh[0] and cl[0] == hc[0] and insync[0] < strat_hh[0] and  strat_hh[0] >= overbought then insync else Double.NaN;
 dh.SetPaintingStrategy(PaintingStrategy.POINTS);
 dh.SetLineWeight(1);
 dh.AssignValueColor(Color.YELLOW);
 
-# looking for ANY bullish divergence
-plot dl = if lo[1] == ll[1] and cl[1] == lc[1] and insync[1] > strat_ll[1] and strat_ll[1] <= neg and insync > insync[1] then insync else Double.NaN;
+# looking for any bullish divergence
+plot dl = if lo[0] == ll[0] and cl[0] == lc[0] and insync[0] > strat_ll[0] and strat_ll[0] <= oversold then insync else Double.NaN;
 dl.SetPaintingStrategy(PaintingStrategy.POINTS);
 dl.SetLineWeight(1);
 dl.AssignValueColor(Color.YELLOW);
 
-input audibleAlerts = NO;
-Alert(audibleAlerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
-Alert(audibleAlerts and dh within 2 bars, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
-Alert(audibleAlerts and dl within 2 bars, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
+input audiblealerts = no;
+Alert(audiblealerts and signal, GetSymbol() + " at exhaustion.", Alert.BAR, Sound.Ding);
+Alert(audiblealerts and dh within 2 bars, GetSymbol() + " has a bearish divergence.", Alert.BAR, Sound.Ding);
+Alert(audiblealerts and dl within 2 bars, GetSymbol() + " has a bullish divergence.", Alert.BAR, Sound.Ding);
 
-input paintbars = YES;
+input paintbars = yes;
 AssignPriceColor(if paintbars and signal then Color.YELLOW else Color.CURRENT);
 
-## Needed for Watchlist box painting
-#AssignBackgroundColor(if insync <= pos then Color.GREEN else if insync >= pos then Color.RED else Color.GRAY);
+## needed for watchlist box painting
+#assignbackgroundcolor(if insync <= overbought then color.green else if insync >= pos then color.red else color.gray);
