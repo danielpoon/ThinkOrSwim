@@ -43,7 +43,7 @@ plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 plot overbought = if ema == 1 then ext_ob else mod_ob;
 plot oversold = if ema == 0 then ext_os else mod_os;
 insync.SetLineWeight(2);
-insync.AssignValueColor(if insync >= overbought then Color.RED else if insync <= oversold then Color.GREEN else Color.GRAY);
+## assigning color at the bottom of the script
 oversold.AssignValueColor(Color.DARK_GREEN);
 oversold.HideTitle();
 oversold.HideBubble();
@@ -105,14 +105,14 @@ signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.AssignValueColor(Color.YELLOW);
 
 input audiblealerts = no;
-Alert(audiblealerts and signal == 1, GetSymbol() + " is extremely oversold: " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and signal == 1, GetSymbol() + " <= " + ext_os + ": " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 2, GetSymbol() + " is extremely overbought: " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 3, GetSymbol() + " has a bullish PEG signal: " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 4, GetSymbol() + " has a bearish PEG signal: " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 5, GetSymbol() + " has a bullish divergence: " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 6, GetSymbol() + " has a bearish divergence: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 6, GetSymbol() + " is moderately oversold: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 6, GetSymbol() + " is moderately overbought: " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and signal == 7, GetSymbol() + " is moderately oversold: " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and signal == 8, GetSymbol() + " is moderately overbought: " + insync, Alert.BAR, Sound.Ding);
 
 input add_label = YES;
 AddLabel(add_label, if signal == 1 then "Extremely Oversold: " + insync else "", Color.GREEN);
@@ -125,11 +125,13 @@ AddLabel(add_label, if signal == 7 then "Moderate Oversold: " + insync else "", 
 AddLabel(add_label, if signal == 8 then "Moderate Overbought: " + insync else "", Color.RED);
 
 input paintbars = yes;
-AssignPriceColor(if paintbars and signal between 1 and 6 then Color.YELLOW else Color.CURRENT);
+AssignPriceColor(if paintbars and signal between 1 and 8 then Color.YELLOW else Color.CURRENT);
+
+insync.AssignValueColor(if isnan(signal) then Color.gray else if signal between 1 and 8 then Color.YELLOW else Color.CURRENT);
 
 ## needed for watchlist box signals
 #def signal = insync().signal;
 #input add_label = YES;
-#AddLabel(add_label, if signal == 1 then signal + ": Oversold EXT" else if signal == 2 then signal + ": Overbought EXT" else if signal == 3 then signal + ": Bullish PEG" else if signal == 4 then signal + ": Bearish PEG" else if signal == 5 then signal + ": Bullish DIV" else if signal == 6 then signal + ": Bearish DIV" else if signal == 7 then signal + ": Oversold MOD" else if signal == 8 then signal + ": Overbought MOD" else " ", Color.BLACK);
+#AddLabel(add_label, if signal == 1 then signal + ": Oversold EXT" else if signal == 2 then signal + ": Overbought EXT" else if signal == 3 then signal + ": Bullish PEG" else if signal == 4 then signal + ": Bearish PEG" else if signal == 5 then signal + ": Bullish DIV" else if signal == 6 then signal + ": Bearish DIV" else if signal == 7 then signal + ": Oversold MOD" else if signal == 8 then signal + ": Overbought MOD" else "9: Out of Range", Color.BLACK);
 ## needed for watchlist box painting
 #AssignBackgroundColor(if signal == 1 then Color.GREEN else if signal == 2 then Color.RED else if signal == 3 then Color.DARK_GREEN else if signal == 4 then Color.DARK_RED else if signal == 5 then Color.LIGHT_GREEN else if signal == 6 then Color.LIGHT_RED else if signal == 7 then Color.YELLOW else if signal == 8 then Color.DARK_ORANGE else Color.GRAY);
