@@ -20,12 +20,12 @@ def rsi_ma = Round(ExpAverage(rsi, length = ma_length), 1);
 plot diff = Round(rsi - rsi_ma, 0);
 diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
-Diff.DefineColor("Positive and Up", Color.GREEN);
-Diff.DefineColor("Positive and Down", Color.DARK_GREEN);
-Diff.DefineColor("Negative and Down", Color.RED);
-Diff.DefineColor("Negative and Up", Color.DARK_RED);
-Diff.AssignValueColor(if Diff >= 0 then if Diff > Diff[1] then Diff.color("Positive and Up") else Diff.color("Positive and Down") else if Diff < Diff[1] then Diff.color("Negative and Down") else Diff.color("Negative and Up"));
-Diff.AssignValueColor(if Diff >= 0 then if Diff > Diff[1] then Diff.color("Positive and Up") else Diff.color("Positive and Down") else if Diff < Diff[1] then Diff.color("Negative and Down") else Diff.color("Negative and Up"));
+diff.DefineColor("Positive and Up", Color.GREEN);
+diff.DefineColor("Positive and Down", Color.DARK_GREEN);
+diff.DefineColor("Negative and Down", Color.RED);
+diff.DefineColor("Negative and Up", Color.DARK_RED);
+diff.AssignValueColor(if diff >= 0 then if diff > diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
+diff.AssignValueColor(if diff >= 0 then if diff > diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
 
 # bearish divergence definitions
 plot strat_hh = Round(Highest(diff, ntrend));  #round to nearest whole number
@@ -49,13 +49,25 @@ diff_low.SetLineWeight(1);
 diff_low.Hide();
 diff_low.HideTitle();
 
-def rsitrend_ma = Round(movavgExponential(diff, ntrend), 2);
-plot rsitrend_ma_div = round(rsitrend_ma-rsitrend_ma[(ntrend/2)-1],1);
+plot rsitrend_lin = Round(InertiaAll(diff, ntrend), 2);
+rsitrend_lin.SetLineWeight(1);
+rsitrend_lin.AssignValueColor(Color.GRAY);
+
+script inertiaTS {
+    input y = close;
+    input n = 20;
+    def x = x[1] + 1;
+    def a = (n * Sum(x * y, n) - Sum(x, n) * Sum(y, n) ) / ( n * Sum(Sqr(x), n) - Sqr(Sum(x, n)));
+    def b = (Sum(Sqr(x), n) * Sum(y, n) - Sum(x, n) * Sum(x * y, n) ) / ( n * Sum(Sqr(x), n) - Sqr(Sum(x, n)));
+    plot InertiaTS = a * x + b;
+}
+
+plot rsitrend_ma_div = Round(InertiaTS(diff, ntrend), 2);
 rsitrend_ma_div.SetLineWeight(1);
-rsitrend_ma_div.AssignValueColor(if rsitrend_ma_div > 1 then color.green
-else if rsitrend_ma_div < -1 then color.red else color.gray);
+rsitrend_ma_div.AssignValueColor(if rsitrend_ma_div > 1 then Color.GREEN
+else if rsitrend_ma_div < -1 then Color.RED else Color.GRAY);
 #rsitrend_ma_div.Hide();
 #rsitrend_ma_div.HideTitle();
-AddLabel(yes, if rsitrend_ma_div > 1 then "Trend Improving: " + rsitrend_ma_div
-else if rsitrend_ma_div < -1 then "Trend Declining: " + rsitrend_ma_div else "Trend is flat: " + rsitrend_ma_div, if rsitrend_ma_div > 1 then color.green
-else if rsitrend_ma_div < -1 then color.red else color.gray);
+AddLabel(yes, if rsitrend_ma_div > 1 then "Trend Up: " + rsitrend_ma_div
+else if rsitrend_ma_div < -1 then "Trend Down: " + rsitrend_ma_div else "Trend is flat: " + rsitrend_ma_div, if rsitrend_ma_div > 1 then Color.GREEN
+else if rsitrend_ma_div < -1 then Color.RED else Color.GRAY);
