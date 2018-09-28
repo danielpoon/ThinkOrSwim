@@ -5,12 +5,8 @@
 
 declare lower;
 
-input ext_os = 50;
-input mod_os = 70;
-input peg_os = 220;
-input peg_ob = 300;
-input mod_ob = 450;
-input ext_ob = 470;
+input os = 70;
+input ob = 450;
 
 # global definitions
 def hi = high;
@@ -34,14 +30,9 @@ def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 
 # determine price trend for insync signals
-def ma_length = 300;
-def em = ExpAverage(cl, ma_length);
-def ema = if cl >= em then 1 else 0;
-
-# main plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
-plot overbought = if ema == 1 then ext_ob else mod_ob;
-plot oversold = if ema == 0 then ext_os else mod_os;
+plot overbought = ob;
+plot oversold = os;
 insync.SetLineWeight(2);
 ## assigning color at the bottom of the script
 oversold.AssignValueColor(Color.DARK_GREEN);
@@ -53,48 +44,20 @@ overbought.HideTitle();
 overbought.HideBubble();
 overbought.Hide();
 
-# calcs for power earnings gap signal
-def peg_ma_length = 20;
-def peg_em = ExpAverage(cl, peg_ma_length);
-def peg_ema = if cl >= peg_em then 1 else 0;
-def peg_signal = if peg_ema == 1 and cl < op and insync <= peg_os then 1 else if peg_ema == 0 and cl > op and insync >= peg_ob then -1 else Double.NaN;
-
 # bullish / bearish divergences
-input ntrend = 10;
-def ll = Lowest(lo, ntrend);
-def lc = Lowest(cl, ntrend);
+input ntrend = 60;
 plot strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
 strat_ll.SetDefaultColor(Color.DARK_GRAY);
 strat_ll.SetLineWeight(1);
-def hh = Highest(hi, ntrend);
-def hc = Highest(cl, ntrend);
 plot strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
-
-# looking for any bearish divergence
-def dh = if hi == hh and cl == hc and insync < strat_hh and  strat_hh >= overbought then insync else Double.NaN;
-
-# looking for any bullish divergence
-def dl = if lo == ll and cl == lc and insync > strat_ll and strat_ll <= oversold then insync else Double.NaN;
 
 plot signal;
 if insync <= oversold {
     signal = 1;
 } else if insync >= overbought {
     signal = 2;
-} else if peg_signal == 1 {
-    signal = 3;
-} else if peg_signal == -1 {
-    signal = 4;
-} else if dl {
-    signal = 5;
-} else if dh {
-    signal = 6;
-} else if insync <= mod_os {
-    signal = 7;
-} else if insync >= mod_ob {
-    signal = 8;
 } else {
     signal = Double.NaN;
 }
@@ -105,33 +68,21 @@ signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
 signal.AssignValueColor(Color.YELLOW);
 
 input audiblealerts = no;
-Alert(audiblealerts and signal == 1, GetSymbol() + " <= " + ext_os + ": " + insync, Alert.BAR, Sound.Ding);
+Alert(audiblealerts and signal == 1, GetSymbol() + " is extremely oversold: " + insync, Alert.BAR, Sound.Ding);
 Alert(audiblealerts and signal == 2, GetSymbol() + " is extremely overbought: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 3, GetSymbol() + " has a bullish PEG signal: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 4, GetSymbol() + " has a bearish PEG signal: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 5, GetSymbol() + " has a bullish divergence: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 6, GetSymbol() + " has a bearish divergence: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 7, GetSymbol() + " is moderately oversold: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 8, GetSymbol() + " is moderately overbought: " + insync, Alert.BAR, Sound.Ding);
 
 input add_label = YES;
 AddLabel(add_label, if signal == 1 then "Extremely Oversold: " + insync else "", Color.GREEN);
 AddLabel(add_label, if signal == 2 then "Extremely Overbought: " + insync else "", Color.RED);
-AddLabel(add_label, if signal == 3 then "Bullish PEG: " + insync else "", Color.GREEN);
-AddLabel(add_label, if signal == 4 then "Bearish PEG: " + insync else "", Color.RED);
-AddLabel(add_label, if signal == 5 then "Bullish Divergence: " + insync else "", Color.GREEN);
-AddLabel(add_label, if signal == 6 then "Bearish Divergence: " + insync else "", Color.RED);
-AddLabel(add_label, if signal == 7 then "Moderate Oversold: " + insync else "", Color.GREEN);
-AddLabel(add_label, if signal == 8 then "Moderate Overbought: " + insync else "", Color.RED);
 
 input paintbars = yes;
-AssignPriceColor(if paintbars and signal between 1 and 8 then Color.YELLOW else Color.CURRENT);
+AssignPriceColor(if paintbars and signal between 1 and 4 then Color.YELLOW else Color.CURRENT);
 
-insync.AssignValueColor(if isnan(signal) then Color.gray else if signal between 1 and 8 then Color.YELLOW else Color.CURRENT);
+insync.AssignValueColor(if isnan(signal) then Color.gray else if signal between 1 and 2 then Color.YELLOW else Color.CURRENT);
 
 ## needed for watchlist box signals
 #def signal = insync().signal;
 #input add_label = YES;
-#AddLabel(add_label, if signal == 1 then signal + ": Oversold EXT" else if signal == 2 then signal + ": Overbought EXT" else if signal == 3 then signal + ": Bullish PEG" else if signal == 4 then signal + ": Bearish PEG" else if signal == 5 then signal + ": Bullish DIV" else if signal == 6 then signal + ": Bearish DIV" else if signal == 7 then signal + ": Oversold MOD" else if signal == 8 then signal + ": Overbought MOD" else "9: Out of Range", Color.BLACK);
+#AddLabel(add_label, if signal == 1 then signal + ": Oversold EXT" else if signal == 2 then signal + ": Overbought EXT" else "9: Out of Range", Color.BLACK);
 ## needed for watchlist box painting
-#AssignBackgroundColor(if signal == 1 then Color.GREEN else if signal == 2 then Color.RED else if signal == 3 then Color.DARK_GREEN else if signal == 4 then Color.DARK_RED else if signal == 5 then Color.LIGHT_GREEN else if signal == 6 then Color.LIGHT_RED else if signal == 7 then Color.YELLOW else if signal == 8 then Color.DARK_ORANGE else Color.GRAY);
+#AssignBackgroundColor(if signal == 1 then Color.GREEN else if signal == 2 then Color.RED else Color.GRAY);
