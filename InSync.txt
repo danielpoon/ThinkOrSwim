@@ -54,9 +54,9 @@ strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
 
 plot signal;
-if insync <= oversold {
+if insync <= oversold and cl < hl2 {
     signal = 1;
-} else if insync >= overbought {
+} else if insync >= overbought and cl > hl2 {
     signal = 2;
 } else {
     signal = Double.NaN;
@@ -86,3 +86,9 @@ insync.AssignValueColor(if isnan(signal) then Color.gray else if signal between 
 #AddLabel(add_label, if signal == 1 then signal + ": Oversold EXT" else if signal == 2 then signal + ": Overbought EXT" else "9: Out of Range", Color.BLACK);
 ## needed for watchlist box painting
 #AssignBackgroundColor(if signal == 1 then Color.GREEN else if signal == 2 then Color.RED else Color.GRAY);
+
+plot insync_trend = Round(InertiaAll(insync, ntrend), 0);
+insync_trend.SetLineWeight(1);
+insync_trend.AssignValueColor(Color.CYAN);
+#insync_trend.Hide();
+#insync_trend.HideTitle(); 
