@@ -1,4 +1,4 @@
-# RSI Divergence
+# RSI HISTOGRAM
 # Drew Griffith
 
 #hint: signal if the rsi is in a divergence using RSI Histogram.

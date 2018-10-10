@@ -1,12 +1,13 @@
 # insync
 # drew griffith
 
-#hint: mean reversion entry points
+#hint: mean reversion entry strategy. optimized for daily charts
 
 declare lower;
 
-input os = 70;
+input os = 60;
 input ob = 450;
+input ntrend = 60;
 
 # global definitions
 def hi = high;
@@ -29,79 +30,21 @@ def sto = StochasticFull("k period" = sto_length);
 def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 
-# determine price trend for insync signals
+# main plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
-plot overbought = ob;
-plot oversold = os;
 insync.SetLineWeight(2);
-## assigning color at the bottom of the script
-oversold.AssignValueColor(Color.DARK_GREEN);
-oversold.HideTitle();
-oversold.HideBubble();
-oversold.Hide();
-overbought.AssignValueColor(Color.DARK_RED);
-overbought.HideTitle();
-overbought.HideBubble();
-overbought.Hide();
+insync.AssignValueColor(if insync <= os or insync >= ob then Color.YELLOW else Color.GRAY);
 
-# upper and lower boundries of insync over the last ntrend periods
-input ntrend = 60;
+# lower boundries of insync over the last ntrend periods
 plot strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
 strat_ll.SetDefaultColor(Color.DARK_GRAY);
 strat_ll.SetLineWeight(1);
+
+# upper boundries of insync over the last ntrend periods
 plot strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
 strat_hh.SetDefaultColor(Color.DARK_GRAY);
 strat_hh.SetLineWeight(1);
 
-# calcs for power earnings gap signal
-input peg_os = 210;
-input peg_ob = 300;
-def peg_ma_length = 25;
-def peg_em = ExpAverage(cl, peg_ma_length);
-def peg_ema = if cl >= peg_em then 1 else 0;
-def peg_signal = if peg_ema == 1 and cl < hl2 and insync <= peg_os then 1 else if peg_ema == 0 and cl > hl2 and insync >= peg_ob then -1 else Double.NaN;
-
-plot signal;
-if insync <= oversold and cl < hl2 {
-    signal = 1;
-} else if insync >= overbought and cl > hl2 {
-    signal = 2;
-} else if peg_signal == 1 {
-    signal = 3;
-} else if peg_signal == -1 {
-    signal = 4;
-} else {
-    signal = Double.NaN;
-}
-signal.Hide();
-signal.HideTitle();
-signal.HideBubble();
-signal.SetPaintingStrategy(paintingstrategy = PaintingStrategy.POINTS);
-signal.AssignValueColor(Color.YELLOW);
-
-input audiblealerts = no;
-Alert(audiblealerts and signal == 1, GetSymbol() + " is extremely oversold: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 2, GetSymbol() + " is extremely overbought: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 3, GetSymbol() + " is bullish PEG: " + insync, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and signal == 4, GetSymbol() + " is bearish PEG: " + insync, Alert.BAR, Sound.Ding);
-
-input add_label = yes;
-AddLabel(add_label, if signal == 1 then "Extremely Oversold: " + insync else "", Color.GREEN);
-AddLabel(add_label, if signal == 2 then "Extremely Overbought: " + insync else "", Color.RED);
-AddLabel(add_label, if signal == 3 then "Bullish PEG: " + insync else "", Color.DARK_GREEN);
-AddLabel(add_label, if signal == 4 then "Bearish PEG: " + insync else "", Color.DARK_RED);
-
-input paintbars = yes;
-AssignPriceColor(if paintbars and signal between 1 and 4 then Color.YELLOW else Color.CURRENT);
-
-insync.AssignValueColor(if IsNaN(signal) then Color.GRAY else if signal between 1 and 4 then Color.YELLOW else Color.CURRENT);
-
-plot insync_trend = Round(InertiaAll(insync, ntrend), 0);
-insync_trend.SetLineWeight(1);
-insync_trend.AssignValueColor(Color.CYAN);
-#insync_trend.Hide();
-#insync_trend.HideTitle();
-
-# Needed for Watchlist box painting
-#i.AssignValueColor(Color.BLACK);
-#AssignBackgroundColor(if insync >= 450 then Color.RED else if insync between 220 and 400 then Color.DARK_RED else if insync <= 70 then Color.GREEN else if insync between 100 and 210 then Color.DARK_GREEN else Color.GRAY);
+plot midline=250;
+midline.SetDefaultColor(Color.DARK_GRAY);
+midline.SetLineWeight(1);
