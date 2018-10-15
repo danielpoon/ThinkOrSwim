@@ -5,9 +5,8 @@
 
 declare lower;
 
-input os = 60;
+input os = 50;
 input ob = 450;
-input ntrend = 60;
 
 # global definitions
 def hi = high;
@@ -34,17 +33,23 @@ def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 insync.SetLineWeight(2);
 insync.AssignValueColor(if insync <= os or insync >= ob then Color.YELLOW else Color.GRAY);
+insync.Hide();
+insync.HideTitle();
+insync.HideBubble();
 
-# lower boundries of insync over the last ntrend periods
-plot strat_ll = Round(Lowest(insync, ntrend));  #round to nearest whole number
-strat_ll.SetDefaultColor(Color.DARK_GRAY);
-strat_ll.SetLineWeight(1);
+plot overbought=ob;
+overbought.SetDefaultColor(Color.DARK_GRAY);
+overbought.SetLineWeight(1);
+overbought.Hide();
+overbought.HideTitle();
+overbought.HideBubble();
 
-# upper boundries of insync over the last ntrend periods
-plot strat_hh = Round(Highest(insync, ntrend));  #round to nearest whole number
-strat_hh.SetDefaultColor(Color.DARK_GRAY);
-strat_hh.SetLineWeight(1);
+plot oversold=os;
+oversold.SetDefaultColor(Color.DARK_GRAY);
+oversold.SetLineWeight(1);
+oversold.Hide();
+oversold.HideTitle();
+oversold.HideBubble();
 
-plot midline=250;
-midline.SetDefaultColor(Color.DARK_GRAY);
-midline.SetLineWeight(1);
+input showlabel=yes;
+AddLabel(showlabel, "InSync = " + insync, if insync <= os then color.green else if insync >= ob then Color.Red else Color.GRAY);

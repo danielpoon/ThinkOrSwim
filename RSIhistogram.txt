@@ -5,8 +5,8 @@
 
 declare lower;
 input rsi_length = 14;
-input ntrend = 60;
-input ma_length = 60;
+input ntrend = 10;
+input extreme = 26;
 
 # global definitions
 def hi = high;
@@ -15,54 +15,45 @@ def cl = close;
 def op = open;
 
 def rsi = Round(RSI(length = rsi_length, price = cl), 1);
-def rsi_ma = Round(ExpAverage(rsi, length = ma_length), 1);
-plot diff = Round(rsi - rsi_ma, 0);
+plot diff = Round(rsi - 50, 1); #50 is the midpoint
 diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
+diff.DefineColor("Overbought and Up", Color.CYAN);
+diff.DefineColor("Overbought and Down", Color.DARK_GREEN);
 diff.DefineColor("Positive and Up", Color.GREEN);
 diff.DefineColor("Positive and Down", Color.DARK_GREEN);
+diff.DefineColor("Oversold and Down", Color.MAGENTA);
+diff.DefineColor("Oversold and Up", Color.DARK_RED);
 diff.DefineColor("Negative and Down", Color.RED);
 diff.DefineColor("Negative and Up", Color.DARK_RED);
-diff.AssignValueColor(if diff >= 0 then if diff > diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
-diff.AssignValueColor(if diff >= 0 then if diff > diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
 
-script inertiaTS {
-    input y = close;
-    input n = 20;
-    def x = x[1] + 1;
-    def a = (n * Sum(x * y, n) - Sum(x, n) * Sum(y, n) ) / ( n * Sum(Sqr(x), n) - Sqr(Sum(x, n)));
-    def b = (Sum(Sqr(x), n) * Sum(y, n) - Sum(x, n) * Sum(x * y, n) ) / ( n * Sum(Sqr(x), n) - Sqr(Sum(x, n)));
-    plot InertiaTS = a * x + b;
-}
+diff.AssignValueColor(if diff >= 20 and diff >= diff[1] then diff.Color("Overbought and Up") else if diff >= 20 and diff < diff[1] then diff.Color("Overbought and Down") else if diff >= 0 then if diff >= diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff <= -20 and diff <= diff[1] then diff.Color("Oversold and Down") else if diff <= -20 and diff > diff[1] then diff.Color("Oversold and Up") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
 
-plot rsi_trend = Round(InertiaTS(diff, ntrend), 2);
-rsi_trend.SetLineWeight(1);
-rsi_trend.AssignValueColor(if rsi_trend > 1 then Color.GREEN
-else if rsi_trend < -1 then Color.RED else Color.GRAY);
-#rsi_trend.Hide();
-#rsi_trend.HideTitle();
+# lower boundries of rsi over the last ntrend periods
+plot strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
+strat_ll.AssignValueColor(Color.DARK_GRAY);
+strat_ll.SetLineWeight(1);
 
-def new_hh = highest(cl, ntrend)[1] <= cl;
-def new_ll = lowest(cl, ntrend)[1] >= cl;
+# upper boundries of rsi over the last ntrend periods
+plot strat_hh = Round(Highest(diff, ntrend));  #round to nearest whole number
+strat_hh.AssignValueColor(Color.DARK_GRAY);
+strat_hh.SetLineWeight(1);
 
-plot beardiv = if diff < 5 and new_hh and rsi_trend < 0 then diff else double.nan;
-beardiv.Hide();
-beardiv.HideTitle();
-beardiv.SetPaintingStrategy(PaintingStrategy.Arrow_DOWN);
-beardiv.SetLineWeight(3);
-beardiv.AssignValueColor(Color.RED);
+# plotting signals for bullish / bearish divergences
+def ll = Lowest(lo, ntrend);
+def hh = Highest(hi, ntrend);
 
-plot bulldiv = if diff > -5 and new_ll and rsi_trend > 0 then diff else double.nan;
-bulldiv.Hide();
-bulldiv.HideTitle();
-bulldiv.SetPaintingStrategy(PaintingStrategy.Arrow_UP);
-bulldiv.SetLineWeight(3);
-bulldiv.AssignValueColor(Color.GREEN);
+# looking for any bearish divergence
+plot beardiv = if cl >= hh[1] and diff < strat_hh and strat_hh >= extreme then diff else Double.NaN;
+beardiv.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+beardiv.SetLineWeight(1);
+beardiv.SetDefaultColor(color = Color.WHITE);
 
-AddLabel(yes, if rsi_trend > 1 then "Trend Up: " + rsi_trend
-else if rsi_trend < -1 then "Trend Down: " + rsi_trend else "Trend is flat: " + rsi_trend, if rsi_trend > 1 then Color.GREEN
-else if rsi_trend < -1 then Color.RED else Color.GRAY);
+# looking for any bullish divergence
+plot bulldiv = if cl <= ll[1] and diff > strat_ll and strat_ll <= -extreme then diff else Double.NaN;
+bulldiv.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+bulldiv.SetLineWeight(1);
+bulldiv.SetDefaultColor(color = Color.WHITE);
 
-input audiblealerts = no;
-Alert(audiblealerts and bulldiv, GetSymbol() + " Bullish Divergence: " + rsi_trend, Alert.BAR, Sound.Ding);
-Alert(audiblealerts and beardiv, GetSymbol() + " Bearish Divergence: " + rsi_trend, Alert.BAR, Sound.Ding);
+input showlabel = yes;
+AddLabel(showlabel, "RSI = " + rsi, if diff <= -20 then Color.GREEN else if diff >= 20 then Color.RED else Color.GRAY);
