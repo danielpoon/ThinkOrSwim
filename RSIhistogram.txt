@@ -5,8 +5,9 @@
 
 declare lower;
 input rsi_length = 14;
-input ntrend = 10;
-input extreme = 26;
+input ntrend = 28;
+input ob = 30;
+input os = -20;
 
 # global definitions
 def hi = high;
@@ -15,7 +16,7 @@ def cl = close;
 def op = open;
 
 def rsi = Round(RSI(length = rsi_length, price = cl), 1);
-plot diff = Round(rsi - 50, 1); #50 is the midpoint
+plot diff = Round(rsi - 50, 0); #50 is the midpoint
 diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
 diff.DefineColor("Overbought and Up", Color.CYAN);
@@ -27,7 +28,7 @@ diff.DefineColor("Oversold and Up", Color.DARK_RED);
 diff.DefineColor("Negative and Down", Color.RED);
 diff.DefineColor("Negative and Up", Color.DARK_RED);
 
-diff.AssignValueColor(if diff >= 20 and diff >= diff[1] then diff.Color("Overbought and Up") else if diff >= 20 and diff < diff[1] then diff.Color("Overbought and Down") else if diff >= 0 then if diff >= diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff <= -20 and diff <= diff[1] then diff.Color("Oversold and Down") else if diff <= -20 and diff > diff[1] then diff.Color("Oversold and Up") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
+diff.AssignValueColor(if diff >= ob and diff >= diff[1] then diff.Color("Overbought and Up") else if diff >= ob and diff < diff[1] then diff.Color("Overbought and Down") else if diff >= 0 then if diff >= diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff <= os and diff <= diff[1] then diff.Color("Oversold and Down") else if diff <= os and diff > diff[1] then diff.Color("Oversold and Up") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
 
 # lower boundries of rsi over the last ntrend periods
 plot strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
@@ -44,16 +45,20 @@ def ll = Lowest(lo, ntrend);
 def hh = Highest(hi, ntrend);
 
 # looking for any bearish divergence
-plot beardiv = if cl >= hh[1] and diff < strat_hh and strat_hh >= extreme then diff else Double.NaN;
+plot beardiv = if cl >= hh[1] and diff < strat_hh and strat_hh >= ob then diff else Double.NaN;
 beardiv.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
 beardiv.SetLineWeight(1);
 beardiv.SetDefaultColor(color = Color.WHITE);
 
 # looking for any bullish divergence
-plot bulldiv = if cl <= ll[1] and diff > strat_ll and strat_ll <= -extreme then diff else Double.NaN;
+plot bulldiv = if cl <= ll[1] and diff > strat_ll and strat_ll <= os then diff else Double.NaN;
 bulldiv.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
 bulldiv.SetLineWeight(1);
 bulldiv.SetDefaultColor(color = Color.WHITE);
 
 input showlabel = yes;
-AddLabel(showlabel, "RSI = " + rsi, if diff <= -20 then Color.GREEN else if diff >= 20 then Color.RED else Color.GRAY);
+AddLabel(showlabel, "RSI = " + rsi, if diff <= os then Color.YELLOW else if diff >= ob then Color.YELLOW else Color.GRAY);
+
+input audibleAlerts = yes;
+Alert(If(bulldiv, 1, 0) within 1 bars, "BULLISH DIVERGENCE", Alert.BAR, Sound.Ding);
+Alert(If(beardiv, 1, 0) within 1 bars, "BEARISH DIVERGENCE", Alert.BAR, Sound.Ding);

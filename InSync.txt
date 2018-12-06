@@ -52,4 +52,8 @@ oversold.HideTitle();
 oversold.HideBubble();
 
 input showlabel=yes;
-AddLabel(showlabel, "InSync = " + insync, if insync <= os then color.green else if insync >= ob then Color.Red else Color.GRAY);
+AddLabel(showlabel, "InSync = " + insync, if insync <= os then Color.YELLOW else if insync >= ob then Color.YELLOW else Color.GRAY);
+
+input audibleAlerts = yes;
+Alert(If(insync <= os, 1, 0) within 1 bars, "EXTREMELY OVERSOLD", Alert.BAR, Sound.Ding);
+Alert(If(insync >= ob, 1, 0) within 1 bars, "EXTREMELY OVERBOUGHT", Alert.BAR, Sound.Ding);

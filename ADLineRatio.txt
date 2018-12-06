@@ -1,0 +1,26 @@
+#ADLineRatio
+#hint: lower study but will produce a box on the upper price chart if "upper" is set to "YES"
+
+declare lower; #change to upper if you only want to see the box/label on the upper chart
+input upper = no; #if yes, then NYSEratio does NOT show and study should be in upper study
+
+def ADVN = close("$ADVN");
+def DVOL = close("$DVOL");
+
+#NYSE ADNV/DECN ratio
+plot NYSEratio = if (ADVN >= DVOL) then round((ADVN / DVOL),1) else round(-(DVOL / ADVN),1);
+NYSEratio.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+NYSEratio.SetLineWeight(3);
+NYSEratio.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+NYSEratio.DefineColor("Positive and Up", Color.GREEN);
+NYSEratio.DefineColor("Positive and Down", Color.DARK_GREEN);
+NYSEratio.DefineColor("Negative and Down", Color.RED);
+NYSEratio.DefineColor("Negative and Up", Color.DARK_RED);
+
+NYSEratio.AssignValueColor(if NYSEratio >= 0 then if NYSEratio >= NYSEratio[1] then NYSEratio.Color("Positive and Up") else NYSEratio.Color("Positive and Down") else if NYSEratio < NYSEratio[1] then NYSEratio.Color("Negative and Down") else NYSEratio.Color("Negative and Up"));
+
+#Hiding depending on if upper or lower
+NYSEratio.setHiding(upper);
+
+# label will always show
+AddLabel(yes, concat("ADNV/DECN = ",NYSEratio), if NYSEratio >= 0 then if NYSEratio >= NYSEratio[1] then NYSEratio.Color("Positive and Up") else NYSEratio.Color("Positive and Down") else if NYSEratio < NYSEratio[1] then NYSEratio.Color("Negative and Down") else NYSEratio.Color("Negative and Up"));
