@@ -1,0 +1,68 @@
+#hint: "PEG" stands for price earnings gap and also known as the holy grail setup. looking for a pullback from a previous gap and the stock is in a consolidation between the EMA10-30. The candlesticks are important here to confirm the move.
+
+declare upper;
+def cl = close;
+def lo = low;
+def hi = high;
+def op = open;
+
+input ema_10 = 10;
+input ema_30 = 30;
+input WickMultiplier = 1.65; #2.0
+input BodyPercentage = 0.40; #.25
+
+plot EMA10 = MovAvgExponential(cl, ema_10);
+EMA10.AssignValueColor(Color.CYAN);
+EMA10.HideBubble();
+EMA10.HideTitle();
+EMA10.Hide();
+EMA10.SetLineWeight(1);
+EMA10.SetPaintingStrategy(PaintingStrategy.LINE);
+
+plot EMA30 = MovAvgExponential(cl, ema_30);
+EMA30.AssignValueColor(Color.MAGENTA);
+EMA30.HideBubble();
+EMA30.HideTitle();
+#EMA30.Hide();
+EMA30.SetLineWeight(3);
+EMA30.SetPaintingStrategy(PaintingStrategy.LINE);
+
+def LongWickReversal = if cl > op
+    and (op - lo) >= ((cl - op) * WickMultiplier)
+    and (hi - cl) <= ((hi - lo) * BodyPercentage)
+    or cl < op
+    and (cl - lo) >= ((op - cl) * WickMultiplier)
+    and (hi - cl) <= ((hi - lo) * BodyPercentage)
+    or cl == op and cl != hi
+    and hi - lo >= Average(hi - lo, 50) then 1
+    else 0;
+
+def ShortWickReversal = if cl < op
+    and (hi - op) >= ((op - cl) * WickMultiplier)
+    and (cl - lo) <= ((hi - lo) * BodyPercentage)
+    or cl > op
+    and (hi - cl) >= ((cl - op) * WickMultiplier)
+    and (cl - lo) <= ((hi - lo) * BodyPercentage)
+    or cl == op and cl != lo
+    and (hi - lo) >= ((cl - lo) * WickMultiplier)
+    and (cl - lo) <= ((hi - lo) * BodyPercentage)
+    or op == lo and cl == lo
+    and hi - lo >= Average(hi - lo, 50) then 1 else 0;
+
+plot signalUP = if cl < EMA10 and cl >= EMA30 and EMA10 > EMA30
+     and (LongWickReversal == 1)
+     then lo else Double.NaN;
+signalUP.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+signalUP.SetLineWeight(5);
+signalUP.AssignValueColor(Color.GREEN);
+
+plot signalDN = if cl > EMA10 and cl <= EMA30 and EMA10 < EMA30
+     and (ShortWickReversal == 1)
+     then hi else Double.NaN;
+signalDN.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+signalDN.SetLineWeight(5);
+signalDN.AssignValueColor(Color.RED);
+
+input audibleAlerts = yes;
+Alert(If(signalUP, 1, 0) within 1 bars, "BULLISH PEG", Alert.BAR, Sound.Ding);
+Alert(If(signalDN, 1, 0) within 1 bars, "BEARISH PEG", Alert.BAR, Sound.Ding);
