@@ -1,0 +1,67 @@
+# PriceTrend
+#hint: if the price closes above or below the trailing value, then the bar will be painted accordingly
+
+declare upper;
+
+input trail = 1;
+input displace = 1;
+input agg = {default current, min5, min15, min30, daily};
+
+def new_high;
+switch (Agg){
+case current:
+    new_high = close > Highest(high(), trail)[displace];
+case min5:
+    new_high = close > Highest(high(period = AggregationPeriod.FIVE_MIN), trail)[displace];
+case min15:
+    new_high = close > Highest(high(period = AggregationPeriod.FIFTEEN_MIN), trail)[displace];
+case min30:
+     new_high = close > Highest(high(period = AggregationPeriod.THIRTY_MIN), trail)[displace];
+case daily:
+    new_high = close > Highest(high(period = AggregationPeriod.DAY), trail)[displace];
+}
+
+def new_low;
+switch (Agg){
+case current:
+    new_low = close < Lowest(low(), trail)[displace];
+case min5:
+    new_low = close < Lowest(low(period = AggregationPeriod.FIVE_MIN), trail)[displace];
+case min15:
+    new_low = close < Lowest(low(period = AggregationPeriod.FIFTEEN_MIN), trail)[displace];
+case min30:
+     new_low = close < Lowest(low(period = AggregationPeriod.THIRTY_MIN), trail)[displace];
+case daily:
+    new_low = close < Lowest(low(period = AggregationPeriod.DAY), trail)[displace];
+}
+
+def greenprice = if new_high then yes else if new_low then no else new_high[1];
+def redprice = if new_low then yes else if new_high then no else new_low[1];
+
+plot bullish = greenprice;
+plot neutral = !greenprice and !redprice;
+plot bearish = redprice;
+
+plot rating = if greenprice then 1 else if redprice then .5 else 0;
+
+def paintbars = yes;
+
+bullish.SetDefaultColor(Color.UPTICK);
+bullish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_POINTS);
+bullish.SetLineWeight(3);
+bullish.Hide();
+neutral.SetDefaultColor(Color.GRAY);
+neutral.SetPaintingStrategy(PaintingStrategy.BOOLEAN_POINTS);
+neutral.SetLineWeight(3);
+neutral.Hide();
+bearish.SetDefaultColor(Color.DOWNTICK);
+bearish.SetPaintingStrategy(PaintingStrategy.BOOLEAN_POINTS);
+bearish.SetLineWeight(3);
+bearish.Hide();
+rating.Hide();
+rating.HideBubble();
+
+DefineGlobalColor("bullish", Color.UPTICK);
+DefineGlobalColor("neutral", Color.GRAY);
+DefineGlobalColor("bearish", Color.DOWNTICK);
+AssignPriceColor(if !paintbars then Color.CURRENT else if greenprice then GlobalColor("bullish") else if redprice then GlobalColor("bearish") else GlobalColor("neutral"));

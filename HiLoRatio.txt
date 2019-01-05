@@ -1,16 +1,14 @@
+#HILORatio
 #hint: lower study but will produce a box on the upper price chart if "upper" is set to "YES"
 
 declare upper; #change to upper if you only want to see the box/label on the upper chart
 input upper = yes; #if yes, then NYSEratio does NOT show and study should be in upper study
 
-def UVOL = close("$UVOL");
-def DVOL = close("$DVOL");
-def UVOLQ = close("$UVOL/Q");
-def DVOLQ = close("$DVOL/Q");
+def NYHGH = close("$NYHGH");
+def NYLOW = close("$NYLOW");
 
-#NYSE Breadth ratio
-plot NYSEratio = if (UVOL >= DVOL) then round((UVOL / DVOL),1) else round(-(DVOL / UVOL),1);
-#NYSEratio.AssignValueColor(if NYSEratio > 0 then Color.GREEN else Color.RED);
+#NYSE NYHGH/NYLOW ratio
+plot NYSEratio = if (NYHGH >= NYLOW) then round((NYHGH / NYLOW),1) else round(-(NYLOW / NYHGH),1);
 NYSEratio.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 NYSEratio.SetLineWeight(3);
 NYSEratio.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
@@ -25,4 +23,4 @@ NYSEratio.AssignValueColor(if NYSEratio >= 0 then if NYSEratio >= NYSEratio[1] t
 NYSEratio.setHiding(upper);
 
 # label will always show
-AddLabel(yes, concat("Volume Breadth = ",concat(NYSEratio, ":1")),if NYSEratio >= 0 then if NYSEratio >= NYSEratio[1] then NYSEratio.Color("Positive and Up") else NYSEratio.Color("Positive and Down") else if NYSEratio < NYSEratio[1] then NYSEratio.Color("Negative and Down") else NYSEratio.Color("Negative and Up"));
+AddLabel(yes, concat("NYHGH/NYLOW = ",concat(NYSEratio, ":1")),if NYSEratio >= 0 then if NYSEratio >= NYSEratio[1] then NYSEratio.Color("Positive and Up") else NYSEratio.Color("Positive and Down") else if NYSEratio < NYSEratio[1] then NYSEratio.Color("Negative and Down") else NYSEratio.Color("Negative and Up"));

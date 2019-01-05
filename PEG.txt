@@ -1,4 +1,4 @@
-#hint: "PEG" stands for price earnings gap and also known as the holy grail setup. looking for a pullback from a previous gap and the stock is in a consolidation between the EMA10-30. The candlesticks are important here to confirm the move. The insync code helps to confirm the move. Arrows will still be plotted if insync value does NOT confirm the move, but gray color instead of red or green. Consider a half size position on a gray signal.
+#hint: "PEG" stands for price earnings gap and also known as the holy grail setup. looking for a pullback from a previous gap and the stock is in a consolidation between the EMA10-30.
 
 declare upper;
 def cl = close;
@@ -8,16 +8,15 @@ def op = open;
 
 input ema_10 = 10;
 input ema_30 = 30;
-input WickMultiplier = 1.65; #2.0
-input BodyPercentage = 0.40; #.25
-input insync_bullpull=220;
-input insync_bearpull=300;
+input ema_300 = 300;
+input bull_sync = 210;
+input bear_sync = 320;
 
 plot EMA10 = MovAvgExponential(cl, ema_10);
 EMA10.AssignValueColor(Color.CYAN);
 EMA10.HideBubble();
 EMA10.HideTitle();
-EMA10.Hide();
+#EMA10.Hide();
 EMA10.SetLineWeight(1);
 EMA10.SetPaintingStrategy(PaintingStrategy.LINE);
 
@@ -25,17 +24,26 @@ plot EMA30 = MovAvgExponential(cl, ema_30);
 EMA30.AssignValueColor(Color.MAGENTA);
 EMA30.HideBubble();
 EMA30.HideTitle();
-EMA30.Hide();
-EMA30.SetLineWeight(2);
+EMA30.SetLineWeight(1);
 EMA30.SetPaintingStrategy(PaintingStrategy.LINE);
 
-# InSync calcs
+plot EMA300 = MovAvgExponential(cl, ema_300);
+EMA300.AssignValueColor(Color.GREEN);
+EMA300.HideBubble();
+EMA300.HideTitle();
+#EMA300.Hide();
+EMA300.SetLineWeight(2);
+EMA300.SetStyle(Curve.LONG_DASH);
+EMA300.SetPaintingStrategy(PaintingStrategy.LINE);
+
 # study definitions
 def bbp_length = 20;
 def mfi_length = 14;
 def sto_length = 14;
 def rsi2_length = 2;
 def rsi14_length = 14;
+
+# study calcs
 def rsi2 = RSI(length = rsi2_length);
 def rsi14 = RSI(length = rsi14_length);
 def mfi = MoneyFlowIndex(length = mfi_length);
@@ -44,45 +52,19 @@ def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 def insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 
-def LongWickReversal = if cl > op
-    and (op - lo) >= ((cl - op) * WickMultiplier)
-    and (hi - cl) <= ((hi - lo) * BodyPercentage)
-    or cl < op
-    and (cl - lo) >= ((op - cl) * WickMultiplier)
-    and (hi - cl) <= ((hi - lo) * BodyPercentage)
-    or cl == op and cl != hi
-    and hi - lo >= Average(hi - lo, 50) then 1
-    else 0;
-
-def ShortWickReversal = if cl < op
-    and (hi - op) >= ((op - cl) * WickMultiplier)
-    and (cl - lo) <= ((hi - lo) * BodyPercentage)
-    or cl > op
-    and (hi - cl) >= ((cl - op) * WickMultiplier)
-    and (cl - lo) <= ((hi - lo) * BodyPercentage)
-    or cl == op and cl != lo
-    and (hi - lo) >= ((cl - lo) * WickMultiplier)
-    and (cl - lo) <= ((hi - lo) * BodyPercentage)
-    or op == lo and cl == lo
-    and hi - lo >= Average(hi - lo, 50) then 1 else 0;
-
-plot signalUP = if cl < EMA10 and cl >= EMA30 and EMA10 > EMA30
-     and (LongWickReversal == 1)
+plot signalUP = if cl <= EMA10 and cl >= EMA30 and EMA10 >= EMA30
+     and insync <= bull_sync
      then lo else Double.NaN;
 signalUP.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
-signalUP.SetLineWeight(2);
-signalUP.AssignValueColor(if cl < EMA10 and cl >= EMA30 and EMA10 > EMA30
-     and (LongWickReversal == 1) and insync <= insync_bullpull
-     then Color.GREEN else Color.gray);
+signalUP.SetLineWeight(3);
+signalUP.AssignValueColor(Color.GREEN);
 
-plot signalDN = if cl > EMA10 and cl <= EMA30 and EMA10 < EMA30
-     and (ShortWickReversal == 1)
+plot signalDN = if cl >= EMA10 and cl <= EMA30 and EMA10 <= EMA30
+     and insync >= bear_sync
      then hi else Double.NaN;
 signalDN.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
-signalDN.SetLineWeight(2);
-signalDN.AssignValueColor(if cl > EMA10 and cl <= EMA30 and EMA10 < EMA30
-     and (ShortWickReversal == 1) and insync >= insync_bearpull
-     then Color.RED else Color.gray);
+signalDN.SetLineWeight(3);
+signalDN.AssignValueColor(Color.RED);
 
 input audibleAlerts = yes;
 Alert(If(signalUP, 1, 0) within 1 bars, "BULLISH PEG", Alert.BAR, Sound.Ding);
