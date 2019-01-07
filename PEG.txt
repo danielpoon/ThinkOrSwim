@@ -1,71 +1,54 @@
-#hint: "PEG" stands for price earnings gap and also known as the holy grail setup. looking for a pullback from a previous gap and the stock is in a consolidation between the EMA10-30.
+#hint: SCAN (only) for "PEG" stands for power earnings gap. looking for a pullback from a previous gap and the stock is in a consolidation phase.
 
 declare upper;
+input percentage = 0.5; #hint: % gap
+input wthn = 30; # periods to look for gap
+def x = 1 + percentage / 100;
+
 def cl = close;
 def lo = low;
 def hi = high;
 def op = open;
+def vo = volume;
+def barnumber = BarNumber();
+
+def gapup = lo > hi[1] * x;
+def sign_up = if gapup then barnumber else 0;
+def cup = (barnumber - Highest(sign_up[1], wthn));
+def count_up = if barnumber <= wthn then 0 else if cup > wthn then 0 else cup;
+
+def gapdn = hi * x < lo[1];
+def sign_dn = if gapdn then barnumber else 0;
+def cdn = (barnumber - Highest(sign_dn[1], wthn));
+def count_dn = if barnumber <= wthn then 0 else if cdn > wthn then 0 else cdn;
 
 input ema_10 = 10;
 input ema_30 = 30;
 input ema_300 = 300;
-input bull_sync = 210;
-input bear_sync = 320;
 
-plot EMA10 = MovAvgExponential(cl, ema_10);
-EMA10.AssignValueColor(Color.CYAN);
-EMA10.HideBubble();
-EMA10.HideTitle();
-#EMA10.Hide();
-EMA10.SetLineWeight(1);
-EMA10.SetPaintingStrategy(PaintingStrategy.LINE);
+def EMA10 = MovAvgExponential(cl, ema_10);
+#EMA10.AssignValueColor(Color.CYAN);
+#EMA10.HideBubble();
+#EMA10.HideTitle();
+#EMA10.SetLineWeight(1);
+#EMA10.SetPaintingStrategy(PaintingStrategy.LINE);
 
-plot EMA30 = MovAvgExponential(cl, ema_30);
-EMA30.AssignValueColor(Color.MAGENTA);
-EMA30.HideBubble();
-EMA30.HideTitle();
-EMA30.SetLineWeight(1);
-EMA30.SetPaintingStrategy(PaintingStrategy.LINE);
+def EMA30 = MovAvgExponential(cl, ema_30);
+#EMA30.AssignValueColor(Color.MAGENTA);
+#EMA30.HideBubble();
+#EMA30.HideTitle();
+#EMA30.SetLineWeight(1);
+#EMA30.SetPaintingStrategy(PaintingStrategy.LINE);
 
-plot EMA300 = MovAvgExponential(cl, ema_300);
-EMA300.AssignValueColor(Color.GREEN);
-EMA300.HideBubble();
-EMA300.HideTitle();
-#EMA300.Hide();
-EMA300.SetLineWeight(2);
-EMA300.SetStyle(Curve.LONG_DASH);
-EMA300.SetPaintingStrategy(PaintingStrategy.LINE);
+#def EMA300 = MovAvgExponential(cl, ema_300);
+#EMA300.AssignValueColor(Color.GREEN);
+#EMA300.HideBubble();
+#EMA300.HideTitle();
+#EMA300.SetLineWeight(2);
+#EMA300.SetStyle(Curve.LONG_DASH);
+#EMA300.SetPaintingStrategy(PaintingStrategy.LINE);
 
-# study definitions
-def bbp_length = 20;
-def mfi_length = 14;
-def sto_length = 14;
-def rsi2_length = 2;
-def rsi14_length = 14;
-
-# study calcs
-def rsi2 = RSI(length = rsi2_length);
-def rsi14 = RSI(length = rsi14_length);
-def mfi = MoneyFlowIndex(length = mfi_length);
-def sto = StochasticFull("k period" = sto_length);
-def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
-def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
-def insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
-
-plot signalUP = if cl <= EMA10 and cl >= EMA30 and EMA10 >= EMA30
-     and insync <= bull_sync
-     then lo else Double.NaN;
-signalUP.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
-signalUP.SetLineWeight(3);
-signalUP.AssignValueColor(Color.GREEN);
-
-plot signalDN = if cl >= EMA10 and cl <= EMA30 and EMA10 <= EMA30
-     and insync >= bear_sync
-     then hi else Double.NaN;
-signalDN.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
-signalDN.SetLineWeight(3);
-signalDN.AssignValueColor(Color.RED);
-
-input audibleAlerts = yes;
-Alert(If(signalUP, 1, 0) within 1 bars, "BULLISH PEG", Alert.BAR, Sound.Ding);
-Alert(If(signalDN, 1, 0) within 1 bars, "BEARISH PEG", Alert.BAR, Sound.Ding);
+plot signal =
+if cl <= EMA10 and cl >= EMA30 and EMA10 >= EMA30 and count_up > 0 and average(vo,5) < average(vo,50) then 1 else
+if cl >= EMA10 and cl <= EMA30 and EMA10 <= EMA30 and count_dn > 0 and average(vo,5) < average(vo,50) then 1 else 0;
+ 
