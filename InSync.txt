@@ -1,12 +1,12 @@
-# insync
-# drew griffith
+# INSYNC
+# DREW GRIFFITH
 
-#hint: mean reversion entry strategy. optimized for daily charts
+#hint: insync determines mean reversion entry points;
 
 declare lower;
 
-input os = 50;
-input ob = 450;
+input insync_os = 50;
+input insync_ob = 450;
 
 # global definitions
 def hi = high;
@@ -14,14 +14,14 @@ def lo = low;
 def op = open;
 def cl = close;
 
-# study definitions
+# study definitions for insync
 def bbp_length = 20;
 def mfi_length = 14;
 def sto_length = 14;
 def rsi2_length = 2;
 def rsi14_length = 14;
 
-# study calcs
+# study calcs for insync
 def rsi2 = RSI(length = rsi2_length);
 def rsi14 = RSI(length = rsi14_length);
 def mfi = MoneyFlowIndex(length = mfi_length);
@@ -29,31 +29,89 @@ def sto = StochasticFull("k period" = sto_length);
 def bp = BollingerPercentB(length = bbp_length, "average type" = "exponential");
 def bbp = if bp >= 100 then 100 else if bp <= 0 then 0 else bp;
 
-# main plots
 plot insync = Round(bbp + rsi2 + rsi14 + mfi + sto, numberofdigits = -1);
 insync.SetLineWeight(2);
-insync.AssignValueColor(if insync <= os or insync >= ob then Color.YELLOW else Color.GRAY);
+insync.AssignValueColor(if insync <= insync_os or insync >= insync_ob then Color.YELLOW else Color.GRAY);
 insync.Hide();
 insync.HideTitle();
 insync.HideBubble();
 
-plot overbought=ob;
+plot overbought=insync_ob;
 overbought.SetDefaultColor(Color.DARK_GRAY);
 overbought.SetLineWeight(1);
 overbought.Hide();
 overbought.HideTitle();
 overbought.HideBubble();
 
-plot oversold=os;
+plot oversold=insync_os;
 oversold.SetDefaultColor(Color.DARK_GRAY);
 oversold.SetLineWeight(1);
 oversold.Hide();
 oversold.HideTitle();
 oversold.HideBubble();
 
-input showlabel=yes;
-AddLabel(showlabel, "InSync = " + insync, if insync <= os then Color.YELLOW else if insync >= ob then Color.YELLOW else Color.GRAY);
+##
+## end insync
+##
 
-input audibleAlerts = yes;
-Alert(If(insync <= os, 1, 0) within 1 bars, "EXTREMELY OVERSOLD", Alert.BAR, Sound.Ding);
-Alert(If(insync >= ob, 1, 0) within 1 bars, "EXTREMELY OVERBOUGHT", Alert.BAR, Sound.Ding);
+#hint: RSI Histogram helps identify OS/OB and divergences
+
+input rsi_length = 14;
+input ntrend = 28;
+input ob = 30;
+input os = -20;
+
+plot diff = Round(rsi14 - 50, 0); #50 is the midpoint
+
+# lower boundries of rsi over the last ntrend periods
+plot strat_ll = Round(Lowest(diff, ntrend));  #round to nearest whole number
+strat_ll.AssignValueColor(Color.DARK_GRAY);
+strat_ll.SetLineWeight(1);
+
+# upper boundries of rsi over the last ntrend periods
+plot strat_hh = Round(Highest(diff, ntrend));  #round to nearest whole number
+strat_hh.AssignValueColor(Color.DARK_GRAY);
+strat_hh.SetLineWeight(1);
+
+# plotting signals for bullish / bearish divergences
+def ll = Lowest(lo, ntrend);
+def hh = Highest(hi, ntrend);
+
+## looking for any bearish divergence
+#plot beardiv = if cl >= hh[1] and diff < strat_hh and strat_hh >= ob then diff else Double.NaN;
+#beardiv.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+#beardiv.SetLineWeight(1);
+#beardiv.SetDefaultColor(color = Color.WHITE);
+
+## looking for any bullish divergence
+#plot bulldiv = if cl <= ll[1] and diff > strat_ll and strat_ll <= os then diff else Double.NaN;
+#bulldiv.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+#bulldiv.SetLineWeight(1);
+#bulldiv.SetDefaultColor(color = Color.WHITE);
+
+diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
+diff.SetLineWeight(3);
+diff.DefineColor("Overbought and Up", Color.CYAN);
+diff.DefineColor("Overbought and Down", Color.DARK_GREEN);
+diff.DefineColor("Positive and Up", Color.GREEN);
+diff.DefineColor("Positive and Down", Color.DARK_GREEN);
+diff.DefineColor("Oversold and Down", Color.MAGENTA);
+diff.DefineColor("Oversold and Up", Color.DARK_RED);
+diff.DefineColor("Negative and Down", Color.RED);
+diff.DefineColor("Negative and Up", Color.DARK_RED);
+diff.AssignValueColor(if diff >= ob and diff >= diff[1] then diff.Color("Overbought and Up") else if diff >= 0 and diff >= strat_hh and diff >= diff[1] then diff.Color("Overbought and Up") else if diff >= ob and diff < diff[1] then diff.Color("Overbought and Down") else if diff >= 0 then if diff >= diff[1] then diff.Color("Positive and Up") else diff.Color("Positive and Down") else if diff <= os and diff <= diff[1] then diff.Color("Oversold and Down") else if diff <= 0 and diff <= strat_ll and diff <= diff[1] then diff.Color("Oversold and Down") else if diff <= os and diff > diff[1] then diff.Color("Oversold and Up") else if diff < diff[1] then diff.Color("Negative and Down") else diff.Color("Negative and Up"));
+
+##
+##END RSI Histogram
+##
+
+# labels
+input showlabel = yes;
+AddLabel(showlabel, "InSync = " + insync, if insync <= insync_os then Color.GREEN else if insync >= insync_ob then Color.RED else Color.GRAY);
+AddLabel(showlabel, "RSI = " + round(rsi14,1), if diff <= os then Color.GREEN else if diff >= ob then Color.RED else Color.GRAY);
+
+input audibleAlerts = no;
+#Alert(If(bulldiv, 1, 0) within 1 bars, "BULLISH DIVERGENCE", Alert.BAR, Sound.Ding);
+#Alert(If(beardiv, 1, 0) within 1 bars, "BEARISH DIVERGENCE", Alert.BAR, Sound.Ding);
+Alert(If(insync <= insync_os, 1, 0) within 1 bars, "EXTREMELY OVERSOLD", Alert.BAR, Sound.Ding);
+Alert(If(insync >= insync_ob, 1, 0) within 1 bars, "EXTREMELY OVERBOUGHT", Alert.BAR, Sound.Ding);
