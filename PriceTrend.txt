@@ -1,4 +1,4 @@
-# PriceTrend
+#PriceTrend
 #hint: if the price closes above or below the trailing value, then the bar will be painted accordingly
 
 declare upper;

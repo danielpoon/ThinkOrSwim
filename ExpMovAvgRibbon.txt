@@ -1,0 +1,37 @@
+#ExpMovAvgRibbon
+#hint: Exp moving average ribbon
+
+declare upper;
+
+# global definitions
+def cl = close;
+def lo = low;
+def hi = high;
+def op = open;
+def vo = volume;
+
+input ema_10 = 10;
+input ema_30 = 30;
+input ema_300 = 300;
+
+plot EMA10 = MovAvgExponential(cl, ema_10);
+EMA10.AssignValueColor(Color.CYAN);
+EMA10.HideBubble();
+EMA10.HideTitle();
+EMA10.SetLineWeight(1);
+EMA10.SetPaintingStrategy(PaintingStrategy.LINE);
+
+plot EMA30 = MovAvgExponential(cl, ema_30);
+EMA30.AssignValueColor(Color.MAGENTA);
+EMA30.HideBubble();
+EMA30.HideTitle();
+EMA30.SetLineWeight(1);
+EMA30.SetPaintingStrategy(PaintingStrategy.LINE);
+
+plot EMA300 = MovAvgExponential(cl, ema_300);
+EMA300.AssignValueColor(Color.GREEN);
+EMA300.HideBubble();
+EMA300.HideTitle();
+EMA300.SetLineWeight(2);
+EMA300.SetStyle(Curve.LONG_DASH);
+EMA300.SetPaintingStrategy(PaintingStrategy.LINE);

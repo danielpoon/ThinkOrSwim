@@ -1,5 +1,5 @@
 #ADLineRatio
-#hint: lower study but will produce a box on the upper price chart if "upper" is set to "YES"
+#hint: intraday study. see details below for plotting
 
 declare upper; #change to upper if you only want to see the box/label on the upper chart
 input upper = yes; #if yes, then NYSEratio does NOT show and study should be in upper study

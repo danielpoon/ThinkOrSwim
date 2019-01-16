@@ -1,18 +1,17 @@
-# INSYNC
-# DREW GRIFFITH
-
-#hint: insync determines mean reversion entry points;
+#DivergenceOBS
 
 declare lower;
-
-input insync_os = 50;
-input insync_ob = 450;
 
 # global definitions
 def hi = high;
 def lo = low;
 def op = open;
 def cl = close;
+
+#hint: insync determines mean reversion entry points;
+
+input insync_os = 50;
+input insync_ob = 450;
 
 # study definitions for insync
 def bbp_length = 20;

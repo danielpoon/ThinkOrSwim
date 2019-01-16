@@ -1,3 +1,4 @@
+#PEG
 #hint: SCAN (only) for "PEG" stands for power earnings gap. looking for a pullback from a previous gap and the stock is in a consolidation phase.
 
 declare upper;
@@ -51,4 +52,3 @@ def EMA30 = MovAvgExponential(cl, ema_30);
 plot signal =
 if cl <= EMA10 and cl >= EMA30 and EMA10 >= EMA30 and count_up > 0 and average(vo,5) < average(vo,50) then 1 else
 if cl >= EMA10 and cl <= EMA30 and EMA10 <= EMA30 and count_dn > 0 and average(vo,5) < average(vo,50) then 1 else 0;
- 

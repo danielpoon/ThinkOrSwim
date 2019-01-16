@@ -1,0 +1,9 @@
+#DoubleInsideDay
+#hint: SCAN (only) for "double inside day" - next day look for the price to move big one way or another...
+def lo = low;
+def hi = high;
+def vo = volume;
+
+def s = if (hi[2] >= hi[1] and lo[2] <= lo[1]) and (hi[1] >= hi[0] and lo[1] <= lo[0])
+and vo[2] >= vo[1] and vo[1] >= vo then 1 else 0;
+plot signal = s within 1 bars;

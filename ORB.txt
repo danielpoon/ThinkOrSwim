@@ -1,0 +1,112 @@
+#ORB
+#hint: Open range bar AND open range break with targets and VWAP
+
+input OpenTime = 0930;
+input ORB = 15;
+
+# global def
+def cl = close;
+def lo = low;
+def hi = high;
+def op = open;
+def vo = volume;
+
+def EndTimeORB = OpenTime + ORB;
+
+# plots ORB
+def ORB_top = if SecondsFromTime(EndTimeORB) >= 0 then ORB_top[1] else
+ if SecondsFromTime(OpenTime) == 0 then high else
+ if SecondsFromTime(OpenTime) < 0 then Double.NaN else
+ if SecondsFromTime(OpenTime) > 0 and SecondsFromTime(EndTimeORB) <= 0
+ and high > ORB_top[1] then high else ORB_top[1];
+
+def ORB_Bottom = if SecondsFromTime(EndTimeORB) >= 0 then ORB_Bottom[1] else
+ if SecondsFromTime(OpenTime) == 0 then low else
+ if SecondsFromTime(OpenTime) < 0 then Double.NaN else
+ if SecondsFromTime(OpenTime) > 0 and SecondsFromTime(EndTimeORB) <= 0
+ and low < ORB_Bottom[1] then low else ORB_Bottom[1];
+
+plot ORB_Hi = ORB_top;
+plot ORB_Lo = ORB_Bottom;
+
+ORB_Hi.SetDefaultColor(Color.GREEN);
+ORB_Hi.SetLineWeight(1);
+ORB_Hi.SetStyle(Curve.LONG_DASH);
+ORB_Hi.SetPaintingStrategy(PaintingStrategy.LINE);
+ORB_Lo.SetDefaultColor(Color.RED);
+ORB_Lo.SetLineWeight(1);
+ORB_Lo.SetStyle(Curve.LONG_DASH);
+ORB_Lo.SetPaintingStrategy(PaintingStrategy.LINE);
+#End ORB
+
+# plotting VWAP
+input timeFrame = {default DAY, WEEK, MONTH};
+
+def cap = GetAggregationPeriod();
+def errorInAggregation =
+    timeFrame == timeFrame.DAY and cap >= AggregationPeriod.WEEK or
+    timeFrame == timeFrame.WEEK and cap >= AggregationPeriod.MONTH;
+Assert(!errorInAggregation, "timeFrame should be not less than current chart aggregation period");
+
+def yyyyMmDd = GetYYYYMMDD();
+def periodIndx;
+switch (timeFrame) {
+case DAY:
+    periodIndx = yyyyMmDd;
+case WEEK:
+    periodIndx = Floor((DaysFromDate(First(yyyyMmDd)) + GetDayOfWeek(First(yyyyMmDd))) / 7);
+case MONTH:
+    periodIndx = RoundDown(yyyyMmDd / 100, 0);
+}
+def isPeriodRolled = CompoundValue(1, periodIndx != periodIndx[1], yes);
+
+def volumeSum;
+def volumeVwapSum;
+def volumeVwap2Sum;
+
+if (isPeriodRolled) {
+    volumeSum = volume;
+    volumeVwapSum = volume * vwap;
+    volumeVwap2Sum = volume * Sqr(vwap);
+} else {
+    volumeSum = CompoundValue(1, volumeSum[1] + volume, volume);
+    volumeVwapSum = CompoundValue(1, volumeVwapSum[1] + volume * vwap, volume * vwap);
+    volumeVwap2Sum = CompoundValue(1, volumeVwap2Sum[1] + volume * Sqr(vwap), volume * Sqr(vwap));
+}
+def price = volumeVwapSum / volumeSum;
+def deviation = Sqrt(Max(volumeVwap2Sum / volumeSum - Sqr(price), 0));
+
+plot VWAP = price;
+VWAP.SetDefaultColor(Color.MAGENTA);
+# END VWAP
+
+# plot targets
+def ORB_Width = ORB_Hi - ORB_Lo;
+plot target_hi = if hi > ORB_Hi + ORB_Width then ORB_Hi + ORB_Width else Double.NaN;
+#target_hi.Hide();
+plot target_lo = if lo < ORB_Lo - ORB_Width then ORB_Lo - ORB_Width else Double.NaN;
+#target_lo.Hide();
+target_hi.SetDefaultColor(Color.WHITE);
+target_hi.SetStyle(Curve.SHORT_DASH);
+target_hi.SetPaintingStrategy(PaintingStrategy.LINE);
+target_hi.SetLineWeight(1);
+target_lo.SetDefaultColor(Color.WHITE);
+target_lo.SetStyle(Curve.SHORT_DASH);
+target_lo.SetPaintingStrategy(PaintingStrategy.LINE);
+target_lo.SetLineWeight(1);
+# END targets
+
+# Plot ORB entry signals
+plot ORB_LE = if cl crosses above ORB_Hi and cl > VWAP then lo else Double.NaN;
+ORB_LE.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+ORB_LE.SetLineWeight(1);
+ORB_LE.SetDefaultColor(color = Color.WHITE);
+
+plot ORB_SE = if cl crosses below ORB_Lo and cl < VWAP then hi else Double.NaN;
+ORB_SE.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+ORB_SE.SetLineWeight(1);
+ORB_SE.SetDefaultColor(color = Color.WHITE);
+
+input audibleAlerts = yes;
+Alert(If(ORB_LE, 1, 0) within 1 bars, "ORB" + ORB + "_LE", Alert.BAR, Sound.Ding);
+Alert(If(ORB_SE, 1, 0) within 1 bars, "ORB" + ORB + "_SE", Alert.BAR, Sound.Ding);
