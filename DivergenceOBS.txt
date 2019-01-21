@@ -1,17 +1,18 @@
-#DivergenceOBS
+# DivergenceOBS
+# Drew Griffith
+
+#hint: insync determines mean reversion entry points for extreme overbought and oversold conditions
 
 declare lower;
+
+input insync_os = 50;
+input insync_ob = 450;
 
 # global definitions
 def hi = high;
 def lo = low;
 def op = open;
 def cl = close;
-
-#hint: insync determines mean reversion entry points;
-
-input insync_os = 50;
-input insync_ob = 450;
 
 # study definitions for insync
 def bbp_length = 20;
@@ -35,14 +36,14 @@ insync.Hide();
 insync.HideTitle();
 insync.HideBubble();
 
-plot overbought=insync_ob;
+plot overbought = insync_ob;
 overbought.SetDefaultColor(Color.DARK_GRAY);
 overbought.SetLineWeight(1);
 overbought.Hide();
 overbought.HideTitle();
 overbought.HideBubble();
 
-plot oversold=insync_os;
+plot oversold = insync_os;
 oversold.SetDefaultColor(Color.DARK_GRAY);
 oversold.SetLineWeight(1);
 oversold.Hide();
@@ -76,17 +77,18 @@ strat_hh.SetLineWeight(1);
 def ll = Lowest(lo, ntrend);
 def hh = Highest(hi, ntrend);
 
+input ShowSignals=yes;
 ## looking for any bearish divergence
-#plot beardiv = if cl >= hh[1] and diff < strat_hh and strat_hh >= ob then diff else Double.NaN;
-#beardiv.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
-#beardiv.SetLineWeight(1);
-#beardiv.SetDefaultColor(color = Color.WHITE);
+plot beardiv = if ShowSignals and cl >= hh[1] and diff < strat_hh and strat_hh >= ob then diff else Double.NaN;
+beardiv.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
+beardiv.SetLineWeight(1);
+beardiv.SetDefaultColor(color = Color.WHITE);
 
 ## looking for any bullish divergence
-#plot bulldiv = if cl <= ll[1] and diff > strat_ll and strat_ll <= os then diff else Double.NaN;
-#bulldiv.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
-#bulldiv.SetLineWeight(1);
-#bulldiv.SetDefaultColor(color = Color.WHITE);
+plot bulldiv = if ShowSignals and cl <= ll[1] and diff > strat_ll and strat_ll <= os then diff else Double.NaN;
+bulldiv.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
+bulldiv.SetLineWeight(1);
+bulldiv.SetDefaultColor(color = Color.WHITE);
 
 diff.SetPaintingStrategy(PaintingStrategy.HISTOGRAM);
 diff.SetLineWeight(3);
@@ -107,10 +109,10 @@ diff.AssignValueColor(if diff >= ob and diff >= diff[1] then diff.Color("Overbou
 # labels
 input showlabel = yes;
 AddLabel(showlabel, "InSync = " + insync, if insync <= insync_os then Color.GREEN else if insync >= insync_ob then Color.RED else Color.GRAY);
-AddLabel(showlabel, "RSI = " + round(rsi14,1), if diff <= os then Color.GREEN else if diff >= ob then Color.RED else Color.GRAY);
+AddLabel(showlabel, "RSI = " + Round(rsi14, 1), if diff <= os then Color.GREEN else if diff >= ob then Color.RED else Color.GRAY);
 
 input audibleAlerts = no;
-#Alert(If(bulldiv, 1, 0) within 1 bars, "BULLISH DIVERGENCE", Alert.BAR, Sound.Ding);
-#Alert(If(beardiv, 1, 0) within 1 bars, "BEARISH DIVERGENCE", Alert.BAR, Sound.Ding);
-Alert(If(insync <= insync_os, 1, 0) within 1 bars, "EXTREMELY OVERSOLD", Alert.BAR, Sound.Ding);
-Alert(If(insync >= insync_ob, 1, 0) within 1 bars, "EXTREMELY OVERBOUGHT", Alert.BAR, Sound.Ding);
+Alert(If(bulldiv, 1, 0) within 1 bars, "Bullish Div", Alert.BAR, Sound.Ding);
+Alert(If(beardiv, 1, 0) within 1 bars, "Bearish Div", Alert.BAR, Sound.Ding);
+Alert(If(insync <= insync_os, 1, 0) within 1 bars, "Ex Oversold", Alert.BAR, Sound.Ding);
+Alert(If(insync >= insync_ob, 1, 0) within 1 bars, "Ex Overbought", Alert.BAR, Sound.Ding);
