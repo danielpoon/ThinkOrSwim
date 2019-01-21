@@ -1,112 +1,217 @@
-#ORB
-#hint: Open range bar AND open range break with targets and VWAP
+# Opening_Range_Breakout Strategy with Risk and Target Lines
+# Mobius [modified by Drew Griffith]
+# This is V03.02.2017(B) Other versions start with V01.01.2001 Ported to TOS 06.2011
+#hint: Opening Range Breakout is one of the original Floor Trader Strategies.\n Why it works: Overnight orders accumulate. Those orders being placed during the first 15 minutes of Regular Trading Hours combined with the typical high volume in the first 30 minutes of trading make this the most volatile trading period of the day. Regularly released reports during the first 30 minutes of trading add to the volatility and effect the days direction.\n Features of this study: The yellow dashed line is the Day Filter Line and is used to determine the trend direction for the day. The dominant time spent above or below this line during the Opening Range Period typically determines the days trend. Green points indicate a close at EOD above the yellow line. Red Points a close below the yellow line. Yellow points a neutral or balanced day, close Between the Opening Range Extremes and often very near the Day Filter Line. The Opening Range is plotted with a green and red dashed line. Trades can be taken when there is an open outside these range lines. Up to 10 Targets are generated using Average True Range to plot target lines. When price crosses the first target line part of the trade should be taken as Risk Off profit and a stop should be placed at the entry point ensuring a profitable trade. If price crosses further targets stops should be moved to the preceeding target until stopped or your profit target is met. Initial Risk Stops are an open below the bar's low prior to entry or the Risk Lines plotted below the Opening range Lines. When price tests the opening range lines from below for the upper line or above for the lower lines trades can be taken with a first target to the yellow line from either direction and a Risk Stop line outside the opening range at the First Target lines or a close outside the Opening Range Lines. \n FYI the color of Probable close direction points are statistically accurate between 60% and 70% of the time. Trading against the direction of the ORB's Day Filtered Direction should be considered counter trend trades.\n As of 01.03.2017 You have just under a 52% probability that a DAILY bar will close green. So a 60% to 70% probability is a nice edge.
 
-input OpenTime = 0930;
-input ORB = 15;
+declare hide_on_daily;
+declare once_per_bar;
+input OrMeanS = 0930; #hint OrMeanS: Begin Mean Period. Usually Market Open EST.
+input OrMeanE = 0935; #hint OrMeanE: End Mean period. Usually End of first bar.
+input OrBegin = 0930; #hint OrBegin: Beginning for Period of Opening Range Breakout.
+input OrEnd  = 0945; #hint OrEnd: End of Period of Opening Range Breakout.
+input RthEnd  = 1600;
+input ShowTodayOnly = YES;
+input nAtr = 4;     #hint nATR: Length for the ATR Risk and Target Lines.
+input AtrTargetMult = 2.0;#hint ATRmult: Multiplier for the ATR calculations.
+input InitialRisk = 0.5; #hint InitialRisk: Amount of Risk your will to take opening a trade.
 
-# global def
-def cl = close;
-def lo = low;
-def hi = high;
-def op = open;
-def vo = volume;
+def h = high;
+def l = low;
+def c = close;
+def bar = BarNumber();
+def na = Double.NaN;
+def TS = TickSize();
 
-def EndTimeORB = OpenTime + ORB;
+def BubbleX = bar == HighestAll(bar);
+def s = ShowTodayOnly;
+def Agg = GetAggregationPeriod() / 1000 / 60;
 
-# plots ORB
-def ORB_top = if SecondsFromTime(EndTimeORB) >= 0 then ORB_top[1] else
- if SecondsFromTime(OpenTime) == 0 then high else
- if SecondsFromTime(OpenTime) < 0 then Double.NaN else
- if SecondsFromTime(OpenTime) > 0 and SecondsFromTime(EndTimeORB) <= 0
- and high > ORB_top[1] then high else ORB_top[1];
+def RTH = if SecondsFromTime(0930) >= 0 and SecondsFromTime(1600) >= 0 then 1 else 0;
+def RTHbar1 = if RTH and !RTH[1] then bar else na;
+def ORActive = if SecondsTillTime(OrMeanE) > 0 and SecondsFromTime(OrMeanS) >= 0 then 1 else 0;
 
-def ORB_Bottom = if SecondsFromTime(EndTimeORB) >= 0 then ORB_Bottom[1] else
- if SecondsFromTime(OpenTime) == 0 then low else
- if SecondsFromTime(OpenTime) < 0 then Double.NaN else
- if SecondsFromTime(OpenTime) > 0 and SecondsFromTime(EndTimeORB) <= 0
- and low < ORB_Bottom[1] then low else ORB_Bottom[1];
+def today = if s == 0 or GetDay() == GetLastDay() and SecondsFromTime(OrMeanS) >= 0 then 1 else 0;
 
-plot ORB_Hi = ORB_top;
-plot ORB_Lo = ORB_Bottom;
+def ORHigh = if ORHigh[1] == 0 or ORActive[1] == 0 and ORActive == 1 then h else if ORActive and h > ORHigh[1] then h else ORHigh[1];
+def ORLow = if ORLow[1] == 0 or ORActive[1] == 0 and ORActive == 1 then l else if ORActive and l < ORLow[1] then l else ORLow[1];
+def ORWidth = ORHigh - ORLow;
+def ORHA = if ORActive or today < 1 then na else ORHigh;
+def ORLA = if ORActive or today < 1 then na else ORLow;
+def O = ORHA - Round(((ORHA - ORLA) / 2) / TS, 0) * TS;
 
-ORB_Hi.SetDefaultColor(Color.GREEN);
-ORB_Hi.SetLineWeight(1);
-ORB_Hi.SetStyle(Curve.LONG_DASH);
-ORB_Hi.SetPaintingStrategy(PaintingStrategy.LINE);
-ORB_Lo.SetDefaultColor(Color.RED);
-ORB_Lo.SetLineWeight(1);
-ORB_Lo.SetStyle(Curve.LONG_DASH);
-ORB_Lo.SetPaintingStrategy(PaintingStrategy.LINE);
-#End ORB
+def ORActive2 = if SecondsTillTime(OrEnd) > 0 and SecondsFromTime(OrBegin) >= 0 then 1 else 0;
+def ORHigh2 = if ORHigh2[1] == 0 or ORActive2[1] == 0 and ORActive2 == 1 then h else if ORActive2 and h > ORHigh2[1] then h else ORHigh2[1];
+def ORLow2 = if ORLow2[1] == 0 or ORActive2[1] == 0 and ORActive2 == 1 then l else if ORActive2 and l < ORLow2[1] then l else ORLow2[1];
+def ORWidth2 = ORHigh2 - ORLow2;
 
-# plotting VWAP
-input timeFrame = {default DAY, WEEK, MONTH};
+def TimeLine = if SecondsTillTime(OrEnd) == 0 then 1 else 0;
+def ORmeanBar = if !ORActive and ORActive[1] then bar else ORmeanBar[1];
+def ORendBar = if !ORActive2 and ORActive2[1] then bar else ORendBar[1];
+def ORL = If (O == 0 , na, O);
 
-def cap = GetAggregationPeriod();
-def errorInAggregation =
-    timeFrame == timeFrame.DAY and cap >= AggregationPeriod.WEEK or
-    timeFrame == timeFrame.WEEK and cap >= AggregationPeriod.MONTH;
-Assert(!errorInAggregation, "timeFrame should be not less than current chart aggregation period");
+plot ORLext = if ShowTodayOnly and BarNumber() >= HighestAll(ORmeanBar) then HighestAll(if IsNaN(c[-1]) then ORL[1] else na) else if !ShowTodayOnly then ORL else na;
+ORLext.SetDefaultColor(Color.YELLOW);
+ORLext.SetStyle(Curve.LONG_DASH);
+ORLext.SetLineWeight(3);
+ORLext.HideTitle();
 
-def yyyyMmDd = GetYYYYMMDD();
-def periodIndx;
-switch (timeFrame) {
-case DAY:
-    periodIndx = yyyyMmDd;
-case WEEK:
-    periodIndx = Floor((DaysFromDate(First(yyyyMmDd)) + GetDayOfWeek(First(yyyyMmDd))) / 7);
-case MONTH:
-    periodIndx = RoundDown(yyyyMmDd / 100, 0);
-}
-def isPeriodRolled = CompoundValue(1, periodIndx != periodIndx[1], yes);
+def ORH2 = if ORActive2 or today < 1 then na else ORHigh2;
+plot ORH2ext = if ShowTodayOnly and bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then ORH2[1] else na) else if !ShowTodayOnly then ORH2 else na;
+ORH2ext.SetDefaultColor(Color.GREEN);
+ORH2ext.SetStyle(Curve.LONG_DASH);
+ORH2ext.SetLineWeight(3);
+ORH2ext.HideTitle();
 
-def volumeSum;
-def volumeVwapSum;
-def volumeVwap2Sum;
+def ORL2 = if ORActive2 or today < 1 then na else ORLow2;
+plot ORL2ext = if ShowTodayOnly and bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then ORL2[1] else na) else if !ShowTodayOnly then ORL2 else na;
+ORL2ext.SetDefaultColor(Color.RED);
+ORL2ext.SetStyle(Curve.LONG_DASH);
+ORL2ext.SetLineWeight(3);
+ORL2ext.HideTitle();
 
-if (isPeriodRolled) {
-    volumeSum = volume;
-    volumeVwapSum = volume * vwap;
-    volumeVwap2Sum = volume * Sqr(vwap);
-} else {
-    volumeSum = CompoundValue(1, volumeSum[1] + volume, volume);
-    volumeVwapSum = CompoundValue(1, volumeVwapSum[1] + volume * vwap, volume * vwap);
-    volumeVwap2Sum = CompoundValue(1, volumeVwap2Sum[1] + volume * Sqr(vwap), volume * Sqr(vwap));
-}
-def price = volumeVwapSum / volumeSum;
-def deviation = Sqrt(Max(volumeVwap2Sum / volumeSum - Sqr(price), 0));
+def RelDay = (ORL - ORL2) / (ORH2 - ORL2);
+def dColor = if RelDay > .5 then 5 else if RelDay < .5 then 6 else 4;
+def pos = (ORH2 - ORL2) / 10;
+plot d1 = If (TimeLine , ORH2, na);
+plot d2 = If (TimeLine , ORH2 - ( pos * 2), na);
+plot d3 = If (TimeLine , ORH2 - ( pos * 3), na);
+plot d4 = If (TimeLine , ORH2 - ( pos * 4), na);
+plot d5 = If (TimeLine , ORH2 - ( pos * 5), na);
+plot d6 = If (TimeLine , ORH2 - ( pos * 6), na);
+plot d7 = If (TimeLine , ORH2 - ( pos * 7), na);
+plot d8 = If (TimeLine , ORH2 - ( pos * 8), na);
+plot d9 = If (TimeLine , ORH2 - ( pos * 9), na);
+plot d10 = If (TimeLine , (ORL2), na);
+d1.SetPaintingStrategy(PaintingStrategy.POINTS);
+d2.SetPaintingStrategy(PaintingStrategy.POINTS);
+d3.SetPaintingStrategy(PaintingStrategy.POINTS);
+d4.SetPaintingStrategy(PaintingStrategy.POINTS);
+d5.SetPaintingStrategy(PaintingStrategy.POINTS);
+d6.SetPaintingStrategy(PaintingStrategy.POINTS);
+d7.SetPaintingStrategy(PaintingStrategy.POINTS);
+d8.SetPaintingStrategy(PaintingStrategy.POINTS);
+d9.SetPaintingStrategy(PaintingStrategy.POINTS);
+d10.SetPaintingStrategy(PaintingStrategy.POINTS);
+d1.AssignValueColor(GetColor(dColor));
+d2.AssignValueColor(GetColor(dColor));
+d3.AssignValueColor(GetColor(dColor));
+d4.AssignValueColor(GetColor(dColor));
+d5.AssignValueColor(GetColor(dColor));
+d6.AssignValueColor(GetColor(dColor));
+d7.AssignValueColor(GetColor(dColor));
+d8.AssignValueColor(GetColor(dColor));
+d9.AssignValueColor(GetColor(dColor));
+d10.AssignValueColor(GetColor(dColor));
+d1.HideBubble();
+d2.HideBubble();
+d3.HideBubble();
+d4.HideBubble();
+d5.HideBubble();
+d6.HideBubble();
+d7.HideBubble();
+d8.HideBubble();
+d9.HideBubble();
+d10.HideBubble();
+d1.HideTitle();
+d2.HideTitle();
+d3.HideTitle();
+d4.HideTitle();
+d5.HideTitle();
+d6.HideTitle();
+d7.HideTitle();
+d8.HideTitle();
+d9.HideTitle();
+d10.HideTitle();
 
-plot VWAP = price;
-VWAP.SetDefaultColor(Color.MAGENTA);
-# END VWAP
+def T = Round(Floor(RthEnd / Agg), 0) * Agg;
+def Settlement = if SecondsTillTime(T) == 0 and SecondsFromTime(T) == 0 then Round(vwap / TS, 0) * TS else Settlement[1];
+def SettlementBar = if SecondsTillTime(T) == 0 and SecondsFromTime(T) == 0 then bar else SettlementBar[1];
+plot SettlementClose = if bar >= HighestAll(SettlementBar) then HighestAll(if IsNaN(close[-1]) then Settlement else na) else na;
+SettlementClose.SetLineWeight(1);
+SettlementClose.SetStyle(Curve.LONG_DASH);
+SettlementClose.SetDefaultColor(Color.GRAY);
+SettlementClose.HideTitle();
 
-# plot targets
-def ORB_Width = ORB_Hi - ORB_Lo;
-plot target_hi = if hi > ORB_Hi + ORB_Width then ORB_Hi + ORB_Width else Double.NaN;
-#target_hi.Hide();
-plot target_lo = if lo < ORB_Lo - ORB_Width then ORB_Lo - ORB_Width else Double.NaN;
-#target_lo.Hide();
-target_hi.SetDefaultColor(Color.WHITE);
-target_hi.SetStyle(Curve.SHORT_DASH);
-target_hi.SetPaintingStrategy(PaintingStrategy.LINE);
-target_hi.SetLineWeight(1);
-target_lo.SetDefaultColor(Color.WHITE);
-target_lo.SetStyle(Curve.SHORT_DASH);
-target_lo.SetPaintingStrategy(PaintingStrategy.LINE);
-target_lo.SetLineWeight(1);
-# END targets
+def RTHOpen = if RTH and !RTH[1] then open else RTHOpen[1];
+plot RTHo = if bar >= HighestAll(RTHbar1) then HighestAll(if IsNaN(close[-1]) then RTHOpen else na) else na;
+RTHo.SetStyle(Curve.SHORT_DASH);
+RTHo.SetDefaultColor(Color.DARK_GRAY);
+RTHo.HideTitle();
 
-# Plot ORB entry signals
-plot ORB_LE = if cl crosses above ORB_Hi and cl > VWAP then lo else Double.NaN;
+# plot entry
+plot ORB_LE = if c crosses above ORHigh2 then l else na;
 ORB_LE.SetPaintingStrategy(PaintingStrategy.ARROW_UP);
 ORB_LE.SetLineWeight(1);
 ORB_LE.SetDefaultColor(color = Color.WHITE);
 
-plot ORB_SE = if cl crosses below ORB_Lo and cl < VWAP then hi else Double.NaN;
+plot ORB_SE = if c crosses below ORLow2 then h else na;
 ORB_SE.SetPaintingStrategy(PaintingStrategy.ARROW_DOWN);
 ORB_SE.SetLineWeight(1);
 ORB_SE.SetDefaultColor(color = Color.WHITE);
 
+# Begin Risk Algorithm
+# First Breakout or Breakdown bars
+def Bubbleloc1 = IsNaN(c[-1]);
+def BreakoutBar = if ORActive then na else if !ORActive and c crosses above ORH2 then bar else if !IsNaN(BreakoutBar[1]) and c crosses ORH2 then BreakoutBar[1] else BreakoutBar[1];
+def ATR = if ORActive2 then Round((Average(TrueRange(h, c, l), nAtr)) / TS, 0) * TS else ATR[1];
+
+# High Targets
+def cond1 = if h > ORH2 and h[1] <= ORH2 then Round((ORH2 + (ATR * AtrTargetMult)) / TS, 0) * TS else cond1[1];
+plot Htarget = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then cond1 else na) else na;
+Htarget.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Htarget.SetLineWeight(1);
+Htarget.SetDefaultColor(Color.WHITE);
+Htarget.HideTitle();
+
+def condHtarget2 = if h crosses above cond1 then Round((cond1 + (ATR * AtrTargetMult)) / TS, 0) * TS else condHtarget2[1];
+plot Htarget2 = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then condHtarget2 else na) else na;
+Htarget2.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Htarget2.SetLineWeight(1);
+Htarget2.SetDefaultColor(Color.PLUM);
+Htarget2.HideTitle();
+
+def condHtarget3 = if h crosses above Htarget2 then Round((condHtarget2 + (ATR * AtrTargetMult)) / TS, 0) * TS else condHtarget3[1];
+plot Htarget3 = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then condHtarget3 else na) else na;
+Htarget3.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Htarget3.SetLineWeight(1);
+Htarget3.SetDefaultColor(Color.PLUM);
+Htarget3.HideTitle();
+
+# Low Targets
+def cond2 = if l < ORL2 and l[1] >= ORL2 then Round((ORL2 - (AtrTargetMult * ATR)) / TS, 0) * TS else cond2[1];
+plot Ltarget = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then cond2 else na) else na;
+Ltarget.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Ltarget.SetLineWeight(1);
+Ltarget.SetDefaultColor(Color.WHITE);
+Ltarget.HideTitle();
+
+def condLtarget2 = if l crosses below Ltarget then Round((cond2 - (AtrTargetMult * ATR)) / TS, 0) * TS else condLtarget2[1];
+plot Ltarget2 = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then condLtarget2 else na) else na;
+Ltarget2.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Ltarget2.SetLineWeight(1);
+Ltarget2.SetDefaultColor(Color.PLUM);
+Ltarget2.HideTitle();
+
+def condLtarget3 = if l crosses below Ltarget2 then Round((condLtarget2 - (ATR * AtrTargetMult)) / TS, 0) * TS else condLtarget3[1];
+plot Ltarget3 = if bar >= HighestAll(ORendBar) then HighestAll(if IsNaN(c[-1]) then condLtarget3 else na) else na;
+Ltarget3.SetPaintingStrategy(PaintingStrategy.SQUARES);
+Ltarget3.SetLineWeight(1);
+Ltarget3.SetDefaultColor(Color.PLUM);
+Ltarget3.HideTitle();
+
+# Day Trend Label
+def DayTrend = if RTHOpen > SettlementClose then 1 else 0;
+def ORTrend = if RelDay < .5 then 1 else 0;
+
+# Time Reminders
+AddVerticalLine(GetDay() == GetLastDay() and SecondsTillTime(0930) == 0, "OP", Color.CYAN, Curve.SHORT_DASH);
+AddVerticalLine(GetDay() == GetLastDay() and SecondsTillTime(1030) == 0, "PPT", Color.CYAN, Curve.SHORT_DASH);
+AddVerticalLine(GetDay() == GetLastDay() and SecondsTillTime(1200) == 0, "Lunch", Color.CYAN, Curve.SHORT_DASH);
+AddVerticalLine(GetDay() == GetLastDay() and SecondsTillTime(1500) == 0, "Last Hr", Color.CYAN, Curve.SHORT_DASH);
+AddVerticalLine(GetDay() == GetLastDay() and SecondsTillTime(1550) == 0, "Last Call", Color.CYAN, Curve.SHORT_DASH);
+
 input audibleAlerts = yes;
-Alert(If(ORB_LE, 1, 0) within 1 bars, "ORB" + ORB + "_LE", Alert.BAR, Sound.Ding);
-Alert(If(ORB_SE, 1, 0) within 1 bars, "ORB" + ORB + "_SE", Alert.BAR, Sound.Ding);
+Alert(If(ORB_LE, 1, 0) within 1 bars, "ORB_LE", Alert.BAR, Sound.Ding);
+Alert(If(ORB_SE, 1, 0) within 1 bars, "ORB_SE", Alert.BAR, Sound.Ding);
+Alert(If(GetDay() == GetLastDay() and SecondsTillTime(1550) == 0, 1, 0), "Last Call", Alert.BAR, Sound.Ding);
+# End Code ORB VO3(B)

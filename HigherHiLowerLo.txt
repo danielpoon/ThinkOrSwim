@@ -1,4 +1,5 @@
-# Hint: Plots consecutive (defined by number)  higher-highs AND lower-lows
+#HigherHiLowerLo
+#hint: Plots consecutive (defined by number)  higher-highs AND lower-lows
 
 input audibleAlerts = NO;
 input price = close;
